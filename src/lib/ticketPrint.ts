@@ -100,7 +100,6 @@ function wrapText(text: string, width: number): string[] {
 function prepareClientTicket(input: ClientTicketInput): EscPosBuilder {
   const b = new EscPosBuilder()
   const d = new Date()
-  const dateStr = d.toLocaleDateString('fr-FR')
   const timeStr = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
   const shopLabel = (input.shopLabel || 'YOBO').toUpperCase()
 
