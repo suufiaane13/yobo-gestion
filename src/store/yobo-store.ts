@@ -40,6 +40,7 @@ import {
   type Theme,
   type ThemePreference,
   type UserProfileDto,
+  type BitmapData,
 } from '../types/yoboApp'
 import { createInitialYoboState, type ToastType, type YoboState, type PrintLogEntry } from './yobo-store-state'
 
@@ -617,6 +618,7 @@ export const useYoboStore = create<YoboStore>()(
             const phone = typeof r.shopPhone === 'string' ? r.shopPhone.trim() : ''
             const price = typeof r.gratinePrice === 'number' ? r.gratinePrice : 5
             set({
+              ticketShopLabel: label,
               ticketShopPhone: phone,
               gratinePrice: price,
             })

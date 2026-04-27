@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { check } from '@tauri-apps/plugin-updater'
 import { invoke } from '@tauri-apps/api/core'
 import { SpinnerIcon } from './icons/SpinnerIcon'

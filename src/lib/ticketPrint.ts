@@ -103,7 +103,7 @@ function prepareClientTicket(input: ClientTicketInput): EscPosBuilder {
   const dateStr = d.toLocaleDateString('fr-FR')
   const timeStr = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
   const shopLabel = (input.shopLabel || 'YOBO').toUpperCase()
-  
+
   // 1. Header Premium (Logo ou Texte)
   const logo = useYoboStore.getState().ticketLogo
   b.align(1)
@@ -113,13 +113,13 @@ function prepareClientTicket(input: ClientTicketInput): EscPosBuilder {
     b.boxLine(shopLabel, PRINTER_WIDTH)
   }
   if (input.shopPhone) b.line(input.shopPhone)
-  
+
   // 2. Order Info
   const shortDate = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
   b.bold(true).row(`#${input.orderId}`, `${shortDate} ${timeStr}`, PRINTER_WIDTH).bold(false)
   b.align(1).invert(true).text(` ${orderTypeLabel(input.orderType)} `).line('').invert(false)
   b.dashedLine()
-  
+
   if (input.customerPhone || input.customerAddress) {
     b.align(0).bold(true)
     if (input.customerPhone) b.line(`  TEL: ${input.customerPhone}`)
@@ -148,22 +148,22 @@ function prepareClientTicket(input: ClientTicketInput): EscPosBuilder {
       const catPrefix = (l.categoryLabel && !isHiddenCat) ? `${l.categoryLabel.toUpperCase()} - ` : ''
       const sizeSuffix = l.size ? ` ${l.size.toUpperCase()}` : ''
       const fullName = qtyPrefix + catPrefix + l.name.toUpperCase() + sizeSuffix
-      
+
       const priceStr = `${(l.unitPrice * l.quantity).toFixed(2)} MAD`
       // On réserve de la place pour le prix (ex: 12 chars)
       const maxNameWidth = PRINTER_WIDTH - priceStr.length - 3 // -3 pour les marges
       const lines = wrapText(fullName, maxNameWidth)
-      
+
       // Première ligne avec le prix
       b.bold(true).row(`  ${lines[0]}`, priceStr, PRINTER_WIDTH).bold(false)
-      
+
       // Lignes suivantes (si besoin) sans le prix
       if (lines.length > 1) {
         for (let i = 1; i < lines.length; i++) {
           b.bold(true).line(`  ${lines[i]}`).bold(false)
         }
       }
-      
+
       // Options en dessous (Gratiné, Note)
       if (l.hasGratine) b.line(`    GRATINÉ`)
       if (l.lineNote) b.line(`    Note: ${l.lineNote}`)
@@ -173,16 +173,16 @@ function prepareClientTicket(input: ClientTicketInput): EscPosBuilder {
   // 5. Bloc Final
   b.align(1).solidLine()
   b.size(1, 1).invert(true).text(` TOTAL: ${input.total.toFixed(2)} MAD `).line('').invert(false).size(0, 0)
-  
+
   if (input.receivedAmount !== undefined && input.receivedAmount !== null) {
-     b.line(`ESPECES: ${input.receivedAmount.toFixed(2)} MAD`)
-     if (input.changeAmount !== undefined && input.changeAmount !== null) {
-       b.line(`RENDU: ${input.changeAmount.toFixed(2)} MAD`)
-     }
+    b.line(`ESPECES: ${input.receivedAmount.toFixed(2)} MAD`)
+    if (input.changeAmount !== undefined && input.changeAmount !== null) {
+      b.line(`RENDU: ${input.changeAmount.toFixed(2)} MAD`)
+    }
   }
 
   b.solidLine()
-  
+
   b.align(1)
   b.line('*** Merci de votre visite ! ***')
   return b
@@ -237,9 +237,9 @@ function prepareKitchenTicket(input: ClientTicketInput): EscPosBuilder {
       const catPrefix = (l.categoryLabel) ? `${l.categoryLabel.toUpperCase()} - ` : ''
       const sizeSuffix = l.size ? ` ${l.size.toUpperCase()}` : ''
       const fullName = qtyPrefix + catPrefix + l.name.toUpperCase() + sizeSuffix
-      
+
       const lines = wrapText(fullName, PRINTER_WIDTH - 4)
-      
+
       // Plats en gras (Alignement Client)
       b.bold(true).line(`  ${lines[0]}`).bold(false)
       if (lines.length > 1) {
@@ -247,7 +247,7 @@ function prepareKitchenTicket(input: ClientTicketInput): EscPosBuilder {
           b.bold(true).line(`  ${lines[i]}`).bold(false)
         }
       }
-      
+
       // Options
       if (l.hasGratine) b.line(`    GRATINÉ`)
       if (l.lineNote) b.line(`    Note: ${l.lineNote}`)
@@ -257,7 +257,7 @@ function prepareKitchenTicket(input: ClientTicketInput): EscPosBuilder {
   b.align(1).solidLine()
   b.line('*** BON DE PREPARATION ***')
   b.solidLine()
-  
+
   b.feed(1)
   return b
 }
@@ -270,7 +270,6 @@ function prepareKitchenTicket(input: ClientTicketInput): EscPosBuilder {
 function prepareCashCloseTicket(input: CashCloseTicketInput): EscPosBuilder {
   const b = new EscPosBuilder()
   const d = new Date()
-  const dateStr = d.toLocaleDateString('fr-FR')
   const timeStr = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
   const shopLabel = (input.shopLabel || 'YOBO').toUpperCase()
 
@@ -300,7 +299,7 @@ function prepareCashCloseTicket(input: CashCloseTicketInput): EscPosBuilder {
   b.row('  TOTAL THÉORIQUE', `${input.theoretical.toFixed(2)} MAD`, PRINTER_WIDTH)
   b.row('  TOTAL RÉEL (ESPÈCES)', `${input.closingAmount.toFixed(2)} MAD`, PRINTER_WIDTH)
   b.bold(false)
-  
+
   b.solidLine(true)
   // 5. Écart (Alerte visuelle)
   if (Math.abs(input.gap) > 0.01) {
@@ -320,22 +319,22 @@ function prepareCashCloseTicket(input: CashCloseTicketInput): EscPosBuilder {
 function prepareQrTicket(input: any): EscPosBuilder {
   const b = new EscPosBuilder()
   const shopLabel = (input.shopLabel || 'YOBO').toUpperCase()
-  
+
   // 1. Header Boxed
   b.align(1)
   b.boxLine(shopLabel, PRINTER_WIDTH)
   // 2. Label Inversé
   b.invert(true).text(` ${input.label.toUpperCase()} `).line('').invert(false)
-  
+
   // 3. QR Code
   b.printQrCode(input.value, 7)
   b.feed(1)
-  
+
   // 4. Footer aligné
   b.dashedLine(true)
   b.align(1).bold(true).line(' SCANNEZ POUR NOUS SUIVRE ').bold(false)
   b.dashedLine(true)
-  
+
   return b
 }
 
@@ -387,13 +386,13 @@ export async function printOrderTicket(input: any): Promise<void> {
 export async function printTestTicket(printerName: string): Promise<void> {
   if (!printerName.trim()) return
   const userId = useYoboStore.getState().userId || 0
-  
+
   const b = new EscPosBuilder()
-  
+
   // 1. En-tête Premium
   b.align(1).boxLine('YOBO SYSTEM TEST', PRINTER_WIDTH)
   b.feed(1)
-  
+
   // 2. Test des Accents (Preuve de compatibilité)
   b.invert(true).line('  TABLE DE CARACTÈRES  ').invert(false)
   b.align(1)
@@ -401,7 +400,7 @@ export async function printTestTicket(printerName: string): Promise<void> {
   b.line('Majuscules: É À È Ê Ô Û Î Â Ç')
   b.line('Euro: €  Degré: °')
   b.solidLine(true)
-  
+
   // 3. Test des Styles
   b.align(0)
   b.row('  STYLE NORMAL', 'OK', PRINTER_WIDTH)
@@ -409,23 +408,23 @@ export async function printTestTicket(printerName: string): Promise<void> {
   b.invert(true).row('  STYLE INVERSÉ ', 'OK ', PRINTER_WIDTH).invert(false)
   b.underline(true).row('  STYLE SOULIGNÉ', 'OK', PRINTER_WIDTH).underline(false)
   b.dashedLine(true)
-  
+
   // 4. Test des Tailles
   b.align(1).feed(1)
   b.size(1, 1).line('DOUBLE TAILLE')
   b.size(0, 0).feed(1)
-  
+
   // 5. QR Code Natif Clean
   b.invert(true).line('  QR CODE TEST  ').invert(false)
   b.feed(1)
   b.printQrCode('https://yobo.me', 6)
-  
+
   b.feed(2)
   b.solidLine(true)
   b.align(1).line(`Date Test: ${new Date().toLocaleString('fr-FR')}`)
   b.line('VERSION LOGICIELLE: V2.5-PRO')
   b.solidLine(true)
-  
+
   b.feed(4).cut()
 
   await invoke('printers_print_raw_bytes', {
@@ -438,7 +437,7 @@ export async function printCashCloseTicket(input: CashCloseTicketInput): Promise
   const printer = useYoboStore.getState().ticketPrinterA || useYoboStore.getState().ticketPrinterB
   const userId = useYoboStore.getState().userId || 0
   if (!printer || !printer.trim()) return
-  
+
   const b = prepareCashCloseTicket(input)
   b.feed(2).cut()
 
@@ -451,7 +450,7 @@ export async function printCashCloseTicket(input: CashCloseTicketInput): Promise
 export function buildOrderTicketPreviewText(input: any): string {
   const clientT = prepareClientTicket(input).toText()
   const kitchenT = prepareKitchenTicket(input).toText()
-  
+
   return `${clientT}\n\n--- COUPURE PAPIER ---\n\n${kitchenT}`
 }
 
