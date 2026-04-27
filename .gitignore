@@ -1,0 +1,45 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Clé privée de signature des mises à jour Tauri (ne jamais commiter)
+src-tauri/.updater.key
+yobo-updater.key
+yobo-updater.key.pub
+
+# Installateurs publiés sur Netlify (souvent trop lourds pour Git — upload via UI ou CI)
+netlify-updates/releases/*.exe
+
+# Paquets prêts à livrer (installateur copié par build-user-release.ps1)
+distribution/YOBO-Gestion-v*/
+
+# Rust / Tauri build files
+src-tauri/target
+src-tauri/gen
+src-tauri/bin
+
+# Backup / Heavy files
+*.rar
+*.zip
+*.7z

@@ -1,0 +1,43 @@
+================================================================================
+  YOBO Gestion — guide rapide (utilisateur final)
+================================================================================
+
+1) INSTALLATION (Windows 10 ou 11)
+   • Double-cliquez sur le fichier d’installation :  yobo-gestion_X.X.X_x64-setup.exe
+   • Suivez les étapes de l’assistant (emplacement, raccourcis).
+   • Si Windows affiche un avertissement « application non reconnue », c’est
+     normal sans certificat commercial : choisissez « Plus d’infos » puis
+     « Exécuter quand même » si vous faites confiance à l’éditeur.
+
+2) PREMIER LANCEMENT
+   • Ouvrez « YOBO Gestion » depuis le menu Démarrer ou le bureau.
+   • Sur l’écran de connexion, le profil « Gérant » doit être sélectionné pour le
+     compte de démonstration (ex. identifiant admin, code PIN 1234). Le profil
+     « Caissier » sert aux comptes créés par le gérant dans l’application.
+   • Changez immédiatement le code PIN dans l’onglet Profil pour sécuriser
+     l’application.
+   • Si la connexion échoue alors que l’application s’ouvre : fermez YOBO,
+     supprimez le dossier  %LOCALAPPDATA%\yobo-gestion  (données locales),
+     puis rouvrez l’app (base vide = nouveau compte démo admin / 1234).
+     Sauvegardez avant toute suppression si vous aviez déjà des données.
+
+3) DONNÉES
+   • Vos données (commandes, menu, comptes) sont enregistrées sur CET
+     ordinateur, dans le dossier des données locales de Windows
+     (fichier SQLite). Ce n’est pas un service cloud.
+   • Pensez à des sauvegardes régulières : onglet Profil (gérant) —
+     « Sauvegarder sous… » pour copier la base sur une clé USB ou un autre disque.
+
+4) NOUVELLE VERSION
+   • Installez la version fournie par votre éditeur avec le fichier .exe
+     (désinstallation de l’ancienne version recommandée avant, si indiqué).
+
+5) DÉSINSTALLATION
+   • Paramètres Windows → Applications → YOBO Gestion → Désinstaller.
+   • La base locale peut rester sur le disque ; supprimez-la seulement si vous
+     savez ce que vous faites (perte des données).
+
+Pour toute assistance technique, contactez la personne ou la société qui vous
+a fourni ce logiciel.
+
+================================================================================

@@ -1,0 +1,3 @@
+# Évite les rebuilds en boucle si une base SQLite traîne encore sous src-tauri
+**/yobo.sqlite
+*.sqlite

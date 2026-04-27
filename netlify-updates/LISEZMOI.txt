@@ -1,0 +1,116 @@
+Checklist avant déploiement Netlify
+===================================
+
+404 sur /updates.json ?
+- Le site doit publier le fichier **updates.json** à la racine (ce dépôt en contient un ; pousse-le sur Git
+  ou redéploie le dossier netlify-updates).
+- Dans Netlify : **Site configuration → Build & deploy** : répertoire de base **vide** (sauf si le repo
+  n’est pas à la racine). Le **netlify.toml** à la racine du repo définit `publish = "netlify-updates"`.
+- Après changement : **Deploys → Trigger deploy → Clear cache and deploy site**.
+
+1) Le fichier **updates.json** est versionné ici ; édite-le après chaque release (voir ci-dessous).
+   L’ancien flux « copier updates.example.json » reste possible si tu préfères le modèle seul.
+
+2) Remplir updates.json après un build Tauri signé :
+   - version : semver > version de l’app installée (voir src-tauri/tauri.conf.json)
+   - platforms.windows-x86_64.signature : contenu texte complet du fichier .sig
+   - platforms.windows-x86_64.url : URL HTTPS du .exe sous /releases/
+
+3) Placer l’installateur NSIS dans releases/ (même nom que dans url).
+
+4) Si ton site Netlify n’est PAS yobo-gestion-updates.netlify.app, change aussi
+   src-tauri/tauri.conf.json → plugins.updater.endpoints.
+
+5) Déployer ce dossier (ou le repo avec netlify.toml à la racine).
+
+Sans updates.json valide + .exe + vraie signature, la vérification de mise à jour échouera.
+
+
+Suite — ordre des opérations (Windows, une release)
+===================================================
+
+A) Préparer la version (dans le code)
+   - Incrémente la version dans src-tauri/tauri.conf.json ET src-tauri/Cargo.toml
+     (et package.json si tu veux tout aligner).
+   - Commit / push si tu déploies via Git.
+
+B) Clé de signature (une fois par machine de build)
+   - Fichier privé : src-tauri/.updater.key (ne pas commiter ; déjà dans .gitignore).
+   - Avant le build release, dans PowerShell (exemple) :
+     $env:TAURI_SIGNING_PRIVATE_KEY_PATH = "CHEMIN\vers\yobo-gestion\src-tauri\.updater.key"
+     (ou TAURI_SIGNING_PRIVATE_KEY = contenu texte de la clé, si tu préfères.)
+
+C) Build release
+   - À la racine du projet : npm run tauri -- build
+   - Résultats typiques :
+     src-tauri\target\release\bundle\nsis\yobo-gestion_X.Y.Z_x64-setup.exe
+     et le fichier .sig du même nom à côté.
+
+D) Mettre à jour netlify-updates/updates.json
+   - "version" : X.Y.Z (strictement supérieure à celle des PC à mettre à jour).
+   - Ouvre le .sig dans un éditeur texte, copie TOUT le contenu dans "signature".
+   - "url" : https://yobo-gestion-updates.netlify.app/releases/NOM_EXACT_DU_EXE
+     (le nom du fichier doit correspondre à ce que tu uploades.)
+
+E) Publier sur Netlify
+   - Uploade le .exe dans netlify-updates/releases/ (ou via l’UI Netlify : fichiers statiques).
+   - Pousse updates.json (et index.html si besoin) puis déclenche un déploiement.
+
+F) Côté caisse
+   - Profil → Vérifier les mises à jour (gérant), ou sonde au démarrage si activée.
+   - L’installation ferme l’app puis relance l’installateur NSIS (mode passif).
+
+Données locales
+   - La base SQLite utilisateur n’est pas effacée par une mise à jour standard : elle reste
+     dans le dossier données de l’OS. En cas de doute après upgrade : teste sur une copie.
+
+Pièges fréquents
+   - version dans JSON ≤ version installée → « déjà à jour » sans erreur.
+   - signature tronquée ou mauvais .sig → échec au téléchargement / vérification.
+   - url qui ne pointe pas vers le bon fichier (404 sur le .exe) → échec au download.
+   - Oublier de redéployer Netlify après modification de updates.json.
+
+
+Flux tout-en-un (recommandé, sur ton PC Windows)
+==============================================
+
+  .\scripts\build-release-signed.ps1
+
+  Enchaîne : npm run build → npx tauri build (avec TAURI_SIGNING_PRIVATE_KEY_PATH)
+  → node scripts/sync-updates-json.mjs pour réécrire netlify-updates/updates.json.
+
+  Ensuite : copie le .exe depuis src-tauri\target\release\bundle\nsis\ vers
+  netlify-updates\releases\ (même nom que dans updates.json), push + déploiement Netlify.
+
+
+Script d’aide (Windows, à la racine du repo)
+===========================================
+
+  npm run release:updates-hints
+    → lit tauri.conf.json, rappelle les variables d’environnement, nom attendu du .exe / .sig.
+
+  npm run tauri -- build
+  npm run release:updates-artifacts
+    → liste les fichiers dans target\release\bundle\nsis\ (taille en Mo).
+
+  npm run release:sync-updates-json
+    → régénère updates.json à partir du .sig (après build signé).
+
+  Variante PowerShell : ouvrir l’explorateur sur le dossier nsis après build :
+    .\scripts\release-updates.ps1 -AfterBuild -OpenFolder
+
+
+Première clé de signature (si jamais créée)
+===========================================
+
+  npx tauri signer generate -w src-tauri\.updater.key --ci
+  Puis copier la clé publique (.pub ou affichée) dans src-tauri\tauri.conf.json → plugins.updater.pubkey.
+
+
+Optionnel (qualité « prod » Windows)
+=====================================
+
+  - Certificat de signature de code (évite en partie les alertes SmartScreen) : hors scope Tauri ;
+    à traiter avec un éditeur / outil de build Windows.
+  - Tester la mise à jour sur un 2e PC ou une VM avant de généraliser.
+  - Après une grosse montée de version : vérifier migration SQLite / schéma (migrations Rust) si tu en ajoutes.

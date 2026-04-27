@@ -1,0 +1,34 @@
+# Vérifie lint, tests unitaires et build front (tsc + Vite).
+# Le build binaire Tauri (Rust) n’est pas exécuté ici pour garder la CI rapide ;
+# lancer `npm run tauri build` localement ou ajouter une job matrix si besoin.
+
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Tests
+        run: npm run test
+
+      - name: Typecheck + Vite build
+        run: npm run build

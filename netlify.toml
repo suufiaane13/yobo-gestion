@@ -1,0 +1,6 @@
+# Site Netlify dédié aux mises à jour (JSON + installateur NSIS).
+# Crée un site sur https://app.netlify.com → « Add new site » → importer ce dépôt,
+# ou déploie le dossier netlify-updates par glisser-déposer.
+[build]
+  publish = "netlify-updates"
+  command = "exit 0"

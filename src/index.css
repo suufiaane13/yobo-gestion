@@ -1,0 +1,3187 @@
+@import "tailwindcss";
+
+/* Même rendu que l’ancienne feuille Google Fonts (ligatures → glyphes d’icônes). */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined', sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-feature-settings: 'liga';
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+:root {
+  /* Inspire tokens — "Kinetic Monolith" (dark) */
+  --text: #e5e2e1;
+  --text-h: #e5e2e1;
+  --muted: #dbc2b0;
+  --bg: #131313;
+  --surface: #1c1b1b;
+  --card: #2a2a2a;
+  --border: #353534;
+  --code-bg: #201f1f;
+  --accent: #f0850a;
+  --accent-container: #f0850a;
+  --accent-bg: rgba(240, 133, 10, 0.16);
+  --accent-border: rgba(240, 133, 10, 0.6);
+  --danger: #ffb4ab;
+  --success: #22c55e;
+  --shadow:
+    rgba(0, 0, 0, 0.45) 0 10px 20px -8px, rgba(0, 0, 0, 0.2) 0 4px 10px -4px;
+
+  /* Barres de défilement (utilisées par * + Firefox scrollbar-color) */
+  --yobo-scrollbar-size: 9px;
+  --yobo-scrollbar-radius: 9999px;
+  --yobo-scrollbar-track: color-mix(in oklab, var(--bg) 88%, var(--surface));
+  --yobo-scrollbar-thumb: color-mix(in oklab, var(--border) 62%, var(--muted) 24%);
+  --yobo-scrollbar-thumb-hover: color-mix(in oklab, var(--accent) 30%, var(--border));
+  --yobo-scrollbar-thumb-active: color-mix(in oklab, var(--accent) 44%, var(--border));
+
+  --sans: 'Inter Variable', Inter, system-ui, 'Segoe UI', Roboto, sans-serif;
+  --heading: 'Inter Variable', Inter, system-ui, 'Segoe UI', Roboto, sans-serif;
+  --label: 'Manrope Variable', Manrope, 'Inter Variable', Inter, system-ui, 'Segoe UI', Roboto, sans-serif;
+  --mono: 'Courier New', Courier, ui-monospace, Consolas, monospace;
+
+  font: 16px/145% var(--sans);
+  letter-spacing: 0.18px;
+  color-scheme: dark;
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  @media (max-width: 1024px) {
+    font-size: 16px;
+  }
+
+  /* Désactiver la sélection globale et les poignées tactiles */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+/* Clair adouci (~70 % : moins « blanc papier », plus confortable sur écran caisse) */
+:root[data-theme='light'] {
+  --text: #2d2d2d;
+  --text-h: #1c1c1c;
+  --muted: #5a5a5a;
+  --bg: #e8e8e8;
+  --surface: #efefef;
+  --card: #e4e4e4;
+  --border: #c6c6c6;
+  --code-bg: #dedede;
+  --accent: #f0850a;
+  --accent-container: #f0850a;
+  --accent-bg: rgba(240, 133, 10, 0.16);
+  --accent-border: rgba(240, 133, 10, 0.52);
+  --danger: #dc2626;
+  --success: #16a34a;
+  --shadow:
+    rgba(15, 15, 15, 0.1) 0 10px 20px -8px, rgba(15, 15, 15, 0.06) 0 4px 10px -4px;
+  --yobo-scrollbar-track: color-mix(in oklab, var(--surface) 88%, #ffffff);
+  --yobo-scrollbar-thumb: color-mix(in oklab, var(--border) 52%, var(--muted) 14%);
+  --yobo-scrollbar-thumb-hover: color-mix(in oklab, var(--accent) 36%, var(--border));
+  --yobo-scrollbar-thumb-active: color-mix(in oklab, var(--accent) 50%, var(--border));
+  color-scheme: light;
+}
+
+#root {
+  width: 100%;
+  margin: 0;
+  /* Plein viewport : dvh = mobile (barre d’adresse), svh = stable ; fallback navigateurs anciens */
+  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* Shell bureau (Tauri) : une seule zone scrollable sous la barre de titre — pas de scrollbar sur le bord fenêtre */
+html[data-yobo-desktop-shell],
+html[data-yobo-desktop-shell] body {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Windows/Tauri : évite la sélection/copie de texte dans l’UI (hors champs). */
+html[data-yobo-desktop-shell] body {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Autorise la sélection uniquement dans les champs de saisie. */
+html[data-yobo-desktop-shell] input,
+html[data-yobo-desktop-shell] textarea,
+html[data-yobo-desktop-shell] [contenteditable='true'],
+html[data-yobo-desktop-shell] .yobo-allow-select {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+html[data-yobo-desktop-shell] #root {
+  min-height: 100%;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  /* Encoches / barre d’accueil iOS & Android (web) ; 0 sur bureau classique */
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* iOS Safari : hauteur réelle sans barre d’outils (complète min-h-dvh) */
+@supports (-webkit-touch-callout: none) {
+  body {
+    min-height: -webkit-fill-available;
+  }
+}
+
+html {
+  /* Chaîne de hauteur pour le flex plein écran */
+  min-height: 100%;
+  min-height: 100svh;
+  min-height: 100dvh;
+}
+
+@keyframes yobo-reorder-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(240, 133, 10, 0.2), 0 0 0 2px var(--accent);
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(240, 133, 10, 0.4), 0 0 0 4px var(--accent);
+    opacity: 0.9;
+  }
+}
+
+.yobo-reorder-glow {
+  animation: yobo-reorder-glow 2s infinite ease-in-out;
+}
+
+@keyframes yobo-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+.yobo-shake {
+  animation: yobo-shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+.yobo-error-ring {
+  box-shadow: 0 0 0 2px var(--accent) !important;
+  border-color: var(--accent) !important;
+}
+
+/* —— Barres de défilement (WebKit / Chromium + Firefox) —— */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--yobo-scrollbar-thumb) var(--yobo-scrollbar-track);
+}
+
+*::-webkit-scrollbar {
+  width: var(--yobo-scrollbar-size);
+  height: var(--yobo-scrollbar-size);
+}
+
+*::-webkit-scrollbar-track {
+  margin: 2px;
+  background: var(--yobo-scrollbar-track);
+  border-radius: var(--yobo-scrollbar-radius);
+  border: 1px solid color-mix(in oklab, var(--border) 24%, transparent);
+}
+
+*::-webkit-scrollbar-thumb {
+  border-radius: var(--yobo-scrollbar-radius);
+  border: 1px solid var(--yobo-scrollbar-track);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--yobo-scrollbar-thumb) 90%, var(--accent)) 0%,
+    var(--yobo-scrollbar-thumb) 100%
+  );
+  background-clip: padding-box;
+  min-height: 2rem;
+  transition:
+    background 0.14s ease,
+    border-color 0.14s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  border-color: var(--yobo-scrollbar-track);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--yobo-scrollbar-thumb-hover) 82%, var(--accent)) 0%,
+    var(--yobo-scrollbar-thumb-hover) 100%
+  );
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:active {
+  border-color: var(--yobo-scrollbar-track);
+  background: var(--yobo-scrollbar-thumb-active);
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-corner {
+  background: var(--yobo-scrollbar-track);
+}
+
+@media (hover: none) and (pointer: coarse) {
+  *::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+  }
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/* Barre de titre fenêtre (Tauri, decorations: false) — zone sûre gérée par `body` (évite double marge) */
+.yobo-titlebar {
+  position: sticky;
+  top: 0;
+  z-index: 40; /* sous les modales (.yobo-modal-backdrop z-index: 50) */
+  display: flex;
+  flex-shrink: 0;
+  align-items: stretch;
+  height: 40px;
+  border-bottom: 1px solid var(--border);
+  border-top: 3px solid var(--accent);
+  box-sizing: border-box;
+  background: linear-gradient(
+    180deg,
+    color-mix(in_oklab, var(--surface) 94%, var(--accent-bg)) 0%,
+    var(--surface) 100%
+  );
+  backdrop-filter: blur(12px);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.yobo-titlebar--fullscreen {
+  border-bottom: none;
+}
+
+.yobo-titlebar__brand {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0 0.65rem 0 0.85rem;
+  border-right: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+}
+
+.yobo-titlebar__logo {
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-h);
+}
+
+.yobo-titlebar__logo-accent {
+  color: var(--accent);
+}
+
+.yobo-titlebar__tag {
+  font-size: 0.5625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.yobo-titlebar__drag {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  min-width: 0;
+  cursor: default;
+  -webkit-app-region: drag;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.yobo-titlebar__drag--disabled {
+  -webkit-app-region: no-drag;
+  cursor: default;
+}
+
+.yobo-titlebar__titles {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 0 0.35rem;
+}
+
+.yobo-titlebar__drag-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-h);
+  line-height: 1.2;
+}
+
+.yobo-titlebar__drag-hint {
+  font-size: 0.5625rem;
+  color: var(--muted);
+  line-height: 1.2;
+}
+
+.yobo-titlebar__clock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  min-width: 0;
+  text-align: center;
+}
+
+.yobo-titlebar__clock-time {
+  font-family: var(--label);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  color: var(--text-h);
+}
+
+.yobo-titlebar__clock-time .yobo-titlebar__clock-sec {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.yobo-titlebar__clock-date {
+  font-family: var(--label);
+  font-size: 0.53rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: capitalize;
+  color: var(--muted);
+  line-height: 1.2;
+}
+
+.yobo-titlebar__actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: stretch;
+  -webkit-app-region: no-drag;
+}
+
+.yobo-titlebar__actions-cluster {
+  display: flex;
+  align-items: stretch;
+}
+
+.yobo-titlebar__action-sep {
+  align-self: center;
+  width: 1px;
+  height: 14px;
+  margin: 0 10px;
+  flex-shrink: 0;
+  background: var(--border);
+  opacity: 0.35;
+}
+
+/** Icônes barre titre : rendu plus fin (15px) */
+.yobo-titlebar__icon {
+  display: block;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  stroke-width: 2.2px;
+}
+
+.yobo-titlebar__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 30px;
+  margin: auto 0;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  outline: none;
+  transition: all 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.yobo-titlebar__btn:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.yobo-titlebar__btn:hover {
+  background: color-mix(in oklab, var(--card) 92%, var(--text-h) 8%);
+  color: var(--text-h);
+  transform: translateY(-0.5px);
+}
+
+.yobo-titlebar__btn:active {
+  transform: scale(0.94);
+  outline: none;
+  box-shadow: none;
+}
+
+.yobo-titlebar__btn--disabled,
+.yobo-titlebar__btn:disabled {
+  opacity: 0.32;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+
+.yobo-titlebar__btn--close:hover {
+  background: color-mix(in oklab, var(--danger) 85%, #000);
+  color: #fff;
+  box-shadow: 0 4px 12px -2px color-mix(in oklab, var(--danger) 35%, transparent);
+}
+
+/* Badge Utilisateur Premium (Antigravity Style) */
+.yobo-titlebar__user-badge {
+  my-auto: auto;
+  margin: auto 4px auto 8px;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--surface) 45%, transparent);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  min-width: 0;
+  cursor: default;
+}
+
+.yobo-titlebar__user-badge--gerant {
+  border-color: color-mix(in oklab, var(--accent) 35%, var(--border));
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--accent-bg) 75%, transparent) 0%,
+    color-mix(in oklab, var(--surface) 55%, transparent) 100%
+  );
+  box-shadow: 0 2px 8px -3px color-mix(in oklab, var(--accent) 25%, transparent);
+}
+
+.yobo-titlebar__user-icon {
+  font-size: 13.5px !important;
+  color: var(--muted);
+}
+
+.yobo-titlebar__user-badge--gerant .yobo-titlebar__user-icon {
+  color: var(--accent);
+}
+
+.yobo-titlebar__user-name {
+  max-width: 7.5rem;
+  truncate: truncate;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-h);
+}
+
+.yobo-titlebar__user-badge--gerant .yobo-titlebar__user-name {
+  color: var(--text-h);
+  text-shadow: 0 0 12px color-mix(in oklab, var(--accent) 30%, transparent);
+}
+
+h1,
+h2 {
+  font-family: var(--heading);
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+h1 {
+  font-size: 42px;
+  letter-spacing: -1px;
+  margin: 0;
+  @media (max-width: 1024px) {
+    font-size: 32px;
+  }
+}
+h2 {
+  font-size: 20px;
+  line-height: 118%;
+  letter-spacing: -0.1px;
+  margin: 0 0 8px;
+  @media (max-width: 1024px) {
+    font-size: 18px;
+  }
+}
+p {
+  margin: 0;
+}
+
+code,
+.counter {
+  font-family: var(--mono);
+  display: inline-flex;
+  border-radius: 4px;
+  color: var(--text-h);
+}
+
+code {
+  font-size: 15px;
+  line-height: 135%;
+  padding: 4px 8px;
+  background: var(--code-bg);
+}
+
+/* —— Formulaires & panneaux menu (hauteurs alignées) —— */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.yobo-panel-block {
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 1rem 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .yobo-panel-block {
+    padding: 1.25rem 1.5rem;
+  }
+}
+
+.yobo-panel-heading {
+  margin: 0 0 1rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-h);
+}
+
+.yobo-panel-heading-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.yobo-panel-heading--row {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: min(100%, 11rem);
+  line-height: 1.3;
+}
+
+/* Option « plat standard » (prix unique) — à droite du titre */
+.yobo-single-price-toggle {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.65rem;
+  cursor: pointer;
+  border-radius: 0.65rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: 0.5rem 0.75rem 0.5rem 0.55rem;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Switch à côté de l’onglet « Ajouter un produit » */
+.yobo-single-price-toggle--tab {
+  padding: 0.35rem 0.55rem 0.35rem 0.45rem;
+  margin-bottom: 2px;
+}
+
+.yobo-single-price-toggle--tab .yobo-single-price-toggle-title {
+  font-size: 0.75rem;
+}
+
+.yobo-single-price-toggle:hover {
+  border-color: color-mix(in oklab, var(--accent) 38%, var(--border));
+}
+
+.yobo-single-price-toggle:has(.yobo-single-price-toggle-input:checked) {
+  border-color: var(--accent-border);
+  background: color-mix(in oklab, var(--accent-bg) 55%, var(--card));
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent) 18%, transparent);
+}
+
+.yobo-single-price-toggle:has(.yobo-single-price-toggle-input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.yobo-single-price-toggle-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+.yobo-single-price-toggle-track {
+  position: relative;
+  width: 2.5rem;
+  height: 1.35rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--muted) 28%, var(--border));
+  transition: background 0.2s ease;
+}
+
+.yobo-single-price-toggle:has(.yobo-single-price-toggle-input:checked) .yobo-single-price-toggle-track {
+  background: color-mix(in oklab, var(--accent) 82%, #1a1008);
+}
+
+.yobo-single-price-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc(1.35rem - 4px);
+  height: calc(1.35rem - 4px);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.2),
+    0 0 0 1px rgb(0 0 0 / 0.06);
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.yobo-single-price-toggle:has(.yobo-single-price-toggle-input:checked) .yobo-single-price-toggle-thumb {
+  transform: translateX(calc(2.5rem - 1.35rem));
+}
+
+.yobo-single-price-toggle-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.12rem;
+  line-height: 1.25;
+  text-align: left;
+}
+
+.yobo-single-price-toggle-title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-h);
+}
+
+.yobo-single-price-toggle-desc {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--muted);
+  max-width: 14rem;
+}
+
+.yobo-field-label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+  min-height: 1rem;
+  line-height: 1rem;
+}
+
+.yobo-field-label--spacer {
+  visibility: hidden;
+  user-select: none;
+}
+
+.yobo-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.25;
+  color: var(--text);
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.yobo-input::placeholder {
+  color: color-mix(in oklab, var(--muted) 85%, transparent);
+}
+
+.yobo-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-bg);
+}
+
+/* Icône loupe à gauche : éviter chevauchement placeholder / texte */
+.yobo-input--with-search-icon {
+  padding-left: 2.85rem;
+}
+
+.yobo-input--compact {
+  text-align: center;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+select.yobo-input {
+  cursor: pointer;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 1.1rem) 55%,
+    calc(100% - 0.75rem) 55%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 2rem;
+}
+
+.yobo-btn-accent {
+  box-sizing: border-box;
+  display: inline-flex;
+  width: 100%;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-container) 100%);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #4d2600;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.yobo-btn-accent:hover {
+  filter: brightness(1.06);
+}
+
+/* Bouton accent carré (icône seule, ex. ajouter taille à côté d’un prix) */
+.yobo-btn-accent.yobo-btn-accent--icon {
+  width: 2.5rem;
+  min-width: 2.5rem;
+  max-width: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0;
+}
+
+/* —— Tableau catalogue menu (recherche + filtres) —— */
+.yobo-menu-table-card {
+  box-shadow: var(--shadow);
+}
+
+.yobo-menu-table-toolbar {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--surface) 88%, var(--accent-bg)) 0%,
+    var(--surface) 100%
+  );
+}
+
+/* —— Journaux : pastille couleur par catégorie (clair / sombre) —— */
+.yobo-log-cat {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  border-radius: 9999px;
+  border: 1px solid;
+  padding: 0.15rem 0.55rem;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.yobo-log-cat--unknown {
+  color: var(--muted);
+  background: color-mix(in oklab, var(--muted) 12%, var(--card));
+  border-color: var(--border);
+}
+
+.yobo-log-cat--auth {
+  color: #ddd6fe;
+  background: color-mix(in oklab, #7c3aed 26%, var(--card));
+  border-color: color-mix(in oklab, #7c3aed 42%, var(--border));
+}
+
+.yobo-log-cat--order {
+  color: #bfdbfe;
+  background: color-mix(in oklab, #2563eb 26%, var(--card));
+  border-color: color-mix(in oklab, #2563eb 40%, var(--border));
+}
+
+.yobo-log-cat--cash {
+  color: #a7f3d0;
+  background: color-mix(in oklab, #059669 26%, var(--card));
+  border-color: color-mix(in oklab, #059669 38%, var(--border));
+}
+
+.yobo-log-cat--menu {
+  color: #fde68a;
+  background: color-mix(in oklab, #d97706 26%, var(--card));
+  border-color: color-mix(in oklab, #d97706 40%, var(--border));
+}
+
+.yobo-log-cat--user {
+  color: #a5f3fc;
+  background: color-mix(in oklab, #0891b2 26%, var(--card));
+  border-color: color-mix(in oklab, #0891b2 40%, var(--border));
+}
+
+.yobo-log-cat--profile {
+  color: #fecdd3;
+  background: color-mix(in oklab, #e11d48 24%, var(--card));
+  border-color: color-mix(in oklab, #e11d48 38%, var(--border));
+}
+
+.yobo-log-cat--settings {
+  color: #cbd5e1;
+  background: color-mix(in oklab, #64748b 26%, var(--card));
+  border-color: color-mix(in oklab, #64748b 38%, var(--border));
+}
+
+:root[data-theme='light'] .yobo-log-cat--auth {
+  color: #5b21b6;
+  background: color-mix(in oklab, #7c3aed 14%, var(--card));
+  border-color: color-mix(in oklab, #7c3aed 30%, var(--border));
+}
+
+:root[data-theme='light'] .yobo-log-cat--order {
+  color: #1d4ed8;
+  background: color-mix(in oklab, #2563eb 12%, var(--card));
+  border-color: color-mix(in oklab, #2563eb 28%, var(--border));
+}
+
+:root[data-theme='light'] .yobo-log-cat--cash {
+  color: #047857;
+  background: color-mix(in oklab, #059669 12%, var(--card));
+  border-color: color-mix(in oklab, #059669 26%, var(--border));
+}
+
+:root[data-theme='light'] .yobo-log-cat--menu {
+  color: #b45309;
+  background: color-mix(in oklab, #d97706 12%, var(--card));
+  border-color: color-mix(in oklab, #d97706 28%, var(--border));
+}
+
+:root[data-theme='light'] .yobo-log-cat--user {
+  color: #0e7490;
+  background: color-mix(in oklab, #0891b2 12%, var(--card));
+  border-color: color-mix(in oklab, #0891b2 26%, var(--border));
+}
+
+:root[data-theme='light'] .yobo-log-cat--profile {
+  color: #be123c;
+  background: color-mix(in oklab, #e11d48 10%, var(--card));
+  border-color: color-mix(in oklab, #e11d48 24%, var(--border));
+}
+
+:root[data-theme='light'] .yobo-log-cat--settings {
+  color: #475569;
+  background: color-mix(in oklab, #64748b 12%, var(--card));
+  border-color: color-mix(in oklab, #64748b 26%, var(--border));
+}
+
+.yobo-menu-table-header-row {
+  border-top: 1px solid color-mix(in oklab, var(--border) 65%, transparent);
+}
+
+.yobo-menu-table-row:hover {
+  background: color-mix(in oklab, var(--accent-bg) 38%, var(--surface)) !important;
+}
+
+/* Produit inactif : ligne grisée (sauf colonne actions) */
+.yobo-menu-table-row--inactive > div:not(:last-child) {
+  opacity: 0.52;
+  filter: grayscale(0.45);
+  color: var(--muted);
+}
+
+.yobo-menu-table-row--inactive > div:first-child {
+  font-weight: 600;
+}
+
+.yobo-menu-table-row--inactive:hover > div:not(:last-child) {
+  opacity: 0.62;
+  filter: grayscale(0.35);
+}
+
+.yobo-menu-filter-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.yobo-category-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.yobo-category-chip {
+  display: inline-flex;
+  height: 2.5rem;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.65rem 0 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.yobo-category-chip-emoji {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: 1.125rem;
+  line-height: 0;
+  flex-shrink: 0;
+  font-family:
+    'Segoe UI Emoji',
+    'Apple Color Emoji',
+    'Noto Color Emoji',
+    sans-serif;
+}
+
+.yobo-menu-emoji-squared {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  line-height: 0;
+  font-size: 1.125rem;
+  flex-shrink: 0;
+  font-family:
+    'Segoe UI Emoji',
+    'Apple Color Emoji',
+    'Noto Color Emoji',
+    sans-serif;
+}
+
+.yobo-category-chip-label {
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.yobo-category-chip-remove {
+  display: flex;
+  height: 1.75rem;
+  width: 1.75rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0.15rem;
+  border: 1px solid color-mix(in oklab, var(--danger) 35%, var(--border));
+  border-radius: 0.35rem;
+  background: color-mix(in oklab, var(--danger) 10%, var(--card));
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--danger);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.yobo-category-chip-remove:hover {
+  background: color-mix(in oklab, var(--danger) 20%, var(--card));
+  border-color: color-mix(in oklab, var(--danger) 55%, var(--border));
+}
+
+.yobo-form-grid {
+  display: grid;
+  gap: 0.75rem 1rem;
+  grid-template-columns: 1fr;
+  min-width: 0;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .yobo-form-grid--3 {
+    grid-template-columns: minmax(0, 1.4fr) minmax(4.5rem, 0.85fr) minmax(0, 1fr);
+    align-items: end;
+  }
+
+  .yobo-form-grid--4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: end;
+  }
+
+  /* Aligné sur la grille catégories : nom large, emoji compact type « picto », taille/prix étroits */
+  /* Nom | Emoji | Catégorie | ligne Taille + Prix + bouton (min 0 = pas de débordement carte) */
+  .yobo-form-grid--products {
+    grid-template-columns:
+      minmax(0, 1.45fr)
+      minmax(4.5rem, 0.72fr)
+      minmax(0, 1.12fr)
+      minmax(0, 1.35fr);
+    align-items: end;
+  }
+
+  /* Ajouter produit : prix unique (4 colonnes) */
+  .yobo-form-grid--product-unique {
+    grid-template-columns:
+      minmax(0, 1.45fr)
+      minmax(4.5rem, 0.72fr)
+      minmax(0, 1.12fr)
+      minmax(5rem, 0.95fr);
+    align-items: end;
+  }
+}
+
+.yobo-form-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.yobo-emoji-picker-root--form .yobo-emoji-picker-trigger {
+  min-height: 2.5rem;
+  box-sizing: border-box;
+}
+
+.yobo-emoji-picker-root--form .yobo-emoji-picker-trigger-char {
+  font-size: 1.25rem;
+}
+
+.yobo-emoji-picker-root--form .yobo-emoji-picker-trigger-hint {
+  font-size: 0.8125rem;
+}
+
+/* Emoji seul (grilles formulaire) : même lecture visuelle que la colonne Emoji catégories */
+.yobo-emoji-picker-root--symbol .yobo-emoji-picker-trigger {
+  justify-content: center;
+  gap: 0.35rem;
+  padding-left: 0.45rem;
+  padding-right: 0.45rem;
+}
+
+.yobo-emoji-picker-root--symbol .yobo-emoji-picker-trigger-char {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  text-align: center;
+  font-size: 1.5rem;
+}
+
+.yobo-emoji-picker-root--symbol.yobo-emoji-picker-root--form .yobo-emoji-picker-trigger-char {
+  font-size: 1.55rem;
+}
+
+.yobo-emoji-picker-root--symbol .yobo-emoji-picker-trigger-chevron {
+  opacity: 0.75;
+}
+
+/* —— Modals YOBO —— */
+@keyframes yobo-modal-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes yobo-modal-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.yobo-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: color-mix(in oklab, #000 72%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: yobo-modal-backdrop-in 0.2s ease-out forwards;
+}
+
+:root[data-theme='light'] .yobo-modal-backdrop {
+  background: color-mix(in oklab, var(--text-h) 35%, transparent);
+}
+
+.yobo-modal-panel {
+  position: relative;
+  max-height: min(90vh, 720px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 1.25rem;
+  border: 1px solid color-mix(in oklab, var(--accent) 28%, var(--border));
+  background: color-mix(in oklab, var(--surface) 85%, var(--card));
+  box-shadow:
+    var(--shadow),
+    0 0 0 1px color-mix(in oklab, var(--accent) 30%, transparent),
+    0 26px 56px -24px color-mix(in oklab, var(--accent) 45%, transparent);
+  animation: yobo-modal-panel-in 0.24s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.yobo-modal-panel--slideover {
+  border-radius: 0;
+  border-left: 1px solid var(--border);
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+  box-shadow:
+    var(--shadow),
+    -24px 0 48px -28px color-mix(in oklab, #000 75%, transparent);
+}
+
+.yobo-modal-accent-bar {
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 1.25rem 1.25rem 0 0;
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--accent) 70%, #000),
+    var(--accent-container),
+    color-mix(in oklab, var(--accent) 75%, #fff)
+  );
+}
+
+.yobo-modal-inner {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+  border-radius: 0 0 1rem 1rem;
+}
+
+.yobo-modal-inner--slideover {
+  border-radius: 0;
+}
+
+.yobo-modal-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1.15rem 1.15rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in oklab, var(--card) 55%, transparent);
+}
+
+.yobo-modal-header--slideover {
+  padding: 1.15rem 1.15rem 0.9rem;
+}
+
+.yobo-modal-emoji {
+  font-size: 2rem;
+  line-height: 1;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 6px color-mix(in oklab, var(--accent) 40%, transparent));
+}
+
+.yobo-modal-title {
+  margin: 0;
+  font-family: var(--heading);
+  font-size: 1.12rem;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--text-h);
+  line-height: 1.25;
+}
+
+.yobo-modal-subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.yobo-modal-close {
+  margin-left: auto;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--card);
+  color: var(--muted);
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.yobo-modal-close:hover {
+  color: var(--text-h);
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.yobo-modal-close .material-symbols-outlined {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.yobo-modal-body {
+  padding: 1rem;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.yobo-modal-body--slideover {
+  padding: 1rem 1.15rem 1.15rem;
+}
+
+.yobo-modal-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  padding: 0.95rem 1.15rem 1.15rem;
+  border-top: 1px solid var(--border);
+  background: color-mix(in oklab, var(--card) 48%, transparent);
+}
+
+.yobo-modal-footer > * {
+  min-height: 2.6rem;
+}
+
+.yobo-modal-footer--slideover {
+  justify-content: flex-start;
+  padding: 0.95rem 1.15rem 1.15rem;
+  background: color-mix(in oklab, var(--bg) 86%, transparent);
+}
+
+/* Boutons taille POS dans le modal */
+.yobo-size-chip {
+  border-radius: 0.65rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: 0.6rem 0.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.yobo-size-chip:hover {
+  border-color: color-mix(in oklab, var(--accent) 50%, var(--border));
+  background: color-mix(in oklab, var(--accent-bg) 80%, var(--card));
+}
+
+.yobo-size-chip--active {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  box-shadow: 0 0 0 1px var(--accent-border);
+}
+
+/* Quantité POS (modal + panier) */
+.yobo-pos-qty-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border-radius: 0.65rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: 0.25rem;
+}
+
+.yobo-pos-qty-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+  background: color-mix(in oklab, var(--accent-bg) 70%, var(--card));
+  color: var(--text-h);
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.yobo-pos-qty-btn:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.yobo-pos-qty-btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.yobo-pos-qty-stepper--locked {
+  opacity: 0.85;
+}
+
+.yobo-pos-qty-input:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.yobo-pos-qty-input {
+  width: 3rem;
+  text-align: center;
+  border: none;
+  background: transparent;
+  color: var(--text-h);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+}
+
+/* Quantité dans le modal produit (légèrement plus compact que le défaut, confort au doigt) */
+.yobo-pos-qty-stepper--modal {
+  align-self: center;
+  padding: 0.22rem;
+  gap: 0.3rem;
+  border-radius: 0.6rem;
+}
+
+.yobo-pos-qty-stepper--modal .yobo-pos-qty-btn {
+  min-width: 2.1rem;
+  min-height: 2.1rem;
+  border-radius: 0.48rem;
+  font-size: 1.05rem;
+}
+
+.yobo-pos-qty-stepper--modal .yobo-pos-qty-input {
+  width: 2.85rem;
+  font-size: 0.9375rem;
+}
+
+.yobo-pos-qty-stepper--compact {
+  padding: 0.15rem;
+  gap: 0.2rem;
+}
+
+.yobo-pos-qty-stepper--compact .yobo-pos-qty-btn {
+  min-width: 1.85rem;
+  min-height: 1.85rem;
+  font-size: 1rem;
+}
+
+/* Ligne panier caisse */
+.yobo-cart-line {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  border-radius: 0.65rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: 0.65rem 0.75rem;
+}
+
+.yobo-cart-line__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.yobo-cart-line__emoji {
+  flex-shrink: 0;
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.yobo-cart-line__info {
+  min-width: 0;
+  flex: 1;
+}
+
+.yobo-cart-line__name {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-h);
+  line-height: 1.25;
+}
+
+.yobo-cart-line__sub {
+  margin-top: 0.15rem;
+  font-size: 0.6875rem;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.yobo-cart-line__size {
+  font-weight: 600;
+  color: color-mix(in oklab, var(--text) 75%, var(--muted));
+}
+
+.yobo-cart-line__remove {
+  flex-shrink: 0;
+  margin: -0.15rem -0.1rem 0 0;
+  padding: 0.2rem 0.45rem;
+  border: none;
+  border-radius: 0.35rem;
+  background: transparent;
+  color: var(--danger);
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.yobo-cart-line__remove:hover {
+  background: color-mix(in oklab, var(--danger) 12%, transparent);
+}
+
+.yobo-gr-index {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  border-radius: 4px;
+  padding: 0.15rem 0.35rem;
+  font-size: 8.5px;
+  font-weight: 900;
+  text-transform: uppercase;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+  line-height: 1;
+  border: 1px solid var(--accent-border);
+}
+
+.yobo-cart-line__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
+}
+
+.yobo-cart-line__qty {
+  min-width: 1.6rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.yobo-cart-line__total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.05rem;
+}
+
+.yobo-cart-line__total-label {
+  font-size: 0.5625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.yobo-cart-line__total-value {
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.yobo-modal-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  justify-content: center;
+  border-radius: 0.75rem;
+  padding: 0.62rem 0.95rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  min-height: 2.65rem;
+  cursor: pointer;
+  transition:
+    opacity 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease,
+    transform 0.12s ease;
+}
+
+.yobo-modal-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.yobo-modal-btn--ghost {
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted);
+}
+
+.yobo-modal-btn--ghost:hover {
+  color: var(--text-h);
+  border-color: var(--accent-border);
+}
+
+.yobo-modal-btn--primary {
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-container) 100%);
+  color: #4d2600;
+  box-shadow: 0 10px 24px -12px color-mix(in oklab, var(--accent) 60%, transparent);
+}
+
+.yobo-modal-btn--primary:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.yobo-modal-btn--primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.yobo-modal-btn--danger {
+  border: 1px solid color-mix(in oklab, var(--danger) 45%, transparent);
+  background: color-mix(in oklab, var(--danger) 88%, #000);
+  color: #fff;
+}
+
+.yobo-modal-btn--danger:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.yobo-modal-btn--danger:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/** Action destructive secondaire (ex. « Annuler la commande ») — lisible en clair et sombre */
+.yobo-modal-btn--danger-outline {
+  border: 1px solid color-mix(in oklab, var(--danger) 40%, var(--border));
+  background: color-mix(in oklab, var(--danger) 9%, var(--card));
+  color: var(--danger);
+  box-shadow: 0 1px 0 color-mix(in oklab, var(--border) 35%, transparent);
+}
+
+.yobo-modal-btn--danger-outline:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--danger) 18%, var(--card));
+  border-color: color-mix(in oklab, var(--danger) 52%, var(--border));
+  color: color-mix(in oklab, var(--danger) 95%, var(--text-h));
+}
+
+.yobo-modal-btn--danger-outline:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/** Badges statut commande — cartes historique (tokens clair / sombre) */
+.yobo-hist-order-status--cancelled {
+  border: 1px solid color-mix(in oklab, var(--danger) 42%, var(--border));
+  background: color-mix(in oklab, var(--danger) 14%, var(--card));
+  color: var(--danger);
+  box-shadow: 0 1px 0 color-mix(in oklab, var(--border) 30%, transparent);
+}
+
+.yobo-hist-order-status--modified {
+  border: 1px solid color-mix(in oklab, var(--accent) 48%, var(--border));
+  background: color-mix(in oklab, var(--accent-bg) 50%, var(--card));
+  color: color-mix(in oklab, var(--accent) 78%, var(--text-h));
+  box-shadow: 0 1px 0 color-mix(in oklab, var(--border) 30%, transparent);
+}
+
+.yobo-hist-order-status--other {
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--surface) 55%, var(--card));
+  color: var(--muted);
+}
+
+.yobo-modal-field {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  padding: 0.5rem 0.65rem;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.yobo-modal-field:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-bg);
+}
+
+.yobo-modal-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+}
+
+/* —— Liste tarifaire tailles / prix (menu + modals) —— */
+.yobo-tarif-empty {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.yobo-tarif-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--card) 85%, var(--surface));
+  overflow: hidden;
+}
+
+/* Une seule ligne : puces S : 80 MAD × … (scroll horizontal si besoin) */
+.yobo-tarif-list--inline {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.25rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border: none;
+  background: transparent;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.yobo-tarif-inline-item {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.28rem 0.35rem 0.28rem 0.45rem;
+  border-radius: 0.4rem;
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--card) 88%, var(--accent-bg));
+  list-style: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.yobo-tarif-inline-item .yobo-tarif-size {
+  min-width: 1.25rem;
+}
+
+.yobo-tarif-inline-amount-wrap {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.12rem;
+  margin-left: 0.05rem;
+}
+
+.yobo-tarif-remove--inline {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-left: 0.15rem;
+  font-size: 1rem;
+}
+
+/* Grille 3×1 par ligne : libellé | : prix MAD | supprimer */
+.yobo-tarif-list--grid3 .yobo-tarif-row--grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: 0 0.5rem;
+  min-height: 2.5rem;
+  padding: 0.45rem 0.65rem;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+
+.yobo-tarif-list--grid3 .yobo-tarif-row--grid3::before {
+  display: none;
+}
+
+.yobo-tarif-list--grid3 .yobo-tarif-row--grid3:last-child {
+  border-bottom: none;
+}
+
+.yobo-tarif-grid-col {
+  min-width: 0;
+}
+
+.yobo-tarif-grid-col--label {
+  justify-self: start;
+  text-align: left;
+}
+
+.yobo-tarif-grid-col--price {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  justify-self: center;
+  gap: 0.1rem 0.15rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.yobo-tarif-grid-col--action {
+  justify-self: end;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.yobo-tarif-list--grid3 .yobo-tarif-remove {
+  margin-left: 0;
+}
+
+.yobo-tarif-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.35rem;
+  padding: 0.35rem 0.5rem 0.35rem 0.65rem;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+
+.yobo-tarif-row:last-child {
+  border-bottom: none;
+}
+
+.yobo-tarif-single-label {
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.yobo-tarif-row--single .yobo-tarif-price {
+  flex: 0 1 auto;
+}
+
+.yobo-tarif-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.35rem;
+  bottom: 0.35rem;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: linear-gradient(
+    180deg,
+    var(--accent),
+    color-mix(in oklab, var(--accent) 60%, transparent)
+  );
+}
+
+.yobo-tarif-size {
+  font-family: var(--heading);
+  font-weight: 800;
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  min-width: 1.75rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.yobo-tarif-colon {
+  color: var(--muted);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.yobo-tarif-price {
+  flex: 1;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.yobo-tarif-amount {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: var(--text-h);
+}
+
+.yobo-tarif-currency {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.yobo-tarif-remove {
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  border: 1px solid color-mix(in oklab, var(--danger) 35%, var(--border));
+  border-radius: 0.4rem;
+  background: color-mix(in oklab, var(--danger) 12%, var(--card));
+  color: var(--danger);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.12s ease;
+}
+
+.yobo-tarif-remove:hover {
+  background: color-mix(in oklab, var(--danger) 22%, var(--card));
+  border-color: color-mix(in oklab, var(--danger) 55%, var(--border));
+}
+
+.yobo-tarif-remove:active {
+  transform: scale(0.96);
+}
+
+/* Version compacte (tableau produits) */
+.yobo-tarif-inline-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.yobo-tarif-inline-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.15rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.35rem;
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--card) 90%, var(--accent-bg));
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.yobo-tarif-inline-chip--price-only {
+  align-items: center;
+}
+
+.yobo-tarif-inline-label {
+  font-weight: 800;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+}
+
+.yobo-tarif-inline-sep {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.yobo-tarif-inline-price {
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+/* —— Sélecteur d’emojis YOBO (catalogue centralisé) —— */
+.yobo-emoji-picker-root {
+  position: relative;
+  width: 100%;
+}
+
+.yobo-emoji-picker-trigger {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+.yobo-emoji-picker-trigger:hover {
+  border-color: var(--accent-border);
+  background: color-mix(in oklab, var(--accent-bg) 35%, var(--card));
+}
+
+.yobo-emoji-picker-trigger-char {
+  font-size: 1.5rem;
+  line-height: 1;
+  width: 2rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.yobo-emoji-picker-trigger-hint {
+  flex: 1;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.yobo-emoji-picker-trigger-chevron {
+  font-size: 0.65rem;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.yobo-emoji-picker-panel {
+  max-height: min(70vh, 22rem);
+  display: flex;
+  flex-direction: column;
+  border-radius: 0.65rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow), 0 0 0 1px color-mix(in oklab, var(--accent) 15%, transparent);
+}
+
+.yobo-emoji-picker-panel--portal {
+  max-height: min(70vh, 22rem);
+}
+
+.yobo-emoji-picker-search-wrap {
+  padding: 0.65rem 0.65rem 0.4rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.yobo-emoji-picker-search {
+  width: 100%;
+  border-radius: 0.45rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  padding: 0.45rem 0.55rem;
+  font-size: 0.8125rem;
+  outline: none;
+}
+
+.yobo-emoji-picker-search:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-bg);
+}
+
+.yobo-emoji-picker-notice {
+  margin: 0;
+  padding: 0.45rem 0.65rem 0;
+  font-size: 0.7rem;
+  line-height: 1.35;
+  color: color-mix(in oklab, var(--accent) 65%, var(--muted));
+  flex-shrink: 0;
+}
+
+.yobo-emoji-picker-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0.35rem 0.5rem 0.5rem;
+}
+
+.yobo-emoji-picker-empty {
+  margin: 0;
+  padding: 1rem 0.5rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.yobo-emoji-picker-group {
+  margin-bottom: 0.65rem;
+}
+
+.yobo-emoji-picker-group:last-child {
+  margin-bottom: 0;
+}
+
+.yobo-emoji-picker-group-title {
+  margin: 0 0 0.35rem;
+  padding: 0 0.15rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+}
+
+.yobo-emoji-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 0.25rem;
+}
+
+@media (max-width: 380px) {
+  .yobo-emoji-picker-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+.yobo-emoji-picker-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.4rem;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    transform 0.1s ease;
+}
+
+.yobo-emoji-picker-cell:hover {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+}
+
+.yobo-emoji-picker-cell--selected {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-border);
+}
+
+.yobo-emoji-picker-cell-char {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.yobo-emoji-picker-foot {
+  margin: 0;
+  padding: 0.4rem 0.65rem 0.55rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.62rem;
+  color: var(--muted);
+  line-height: 1.35;
+  flex-shrink: 0;
+}
+
+.yobo-emoji-picker-foot code {
+  font-size: 0.58rem;
+  padding: 1px 4px;
+}
+
+/* —— Toasts (erreur / warning / success) —— */
+.yobo-toast-stack {
+  position: fixed;
+  top: auto;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: min(360px, calc(100vw - 2rem));
+  pointer-events: none; /* les toasts gèrent le clic via leurs enfants */
+}
+
+.yobo-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 0.85rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--surface) 70%, var(--accent-bg));
+  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow);
+  animation: yobo-toast-in 0.22s ease-out;
+}
+
+.yobo-toast__icon {
+  color: var(--muted);
+  margin-top: 0.1rem;
+  flex-shrink: 0;
+}
+
+.yobo-toast__message {
+  flex: 1;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-h);
+  line-height: 1.25;
+  padding-top: 0.05rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.yobo-toast__close {
+  appearance: none;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0.15rem 0.35rem;
+  border-radius: 10px;
+  line-height: 1;
+  font-size: 1.15rem;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.yobo-toast__close:hover {
+  background: color-mix(in oklab, var(--card) 70%, transparent);
+  color: var(--text-h);
+}
+
+.yobo-toast--success {
+  border-color: color-mix(in oklab, var(--success) 45%, var(--border));
+  background: color-mix(in oklab, var(--success) 10%, var(--surface));
+}
+
+.yobo-toast--success .yobo-toast__icon {
+  color: var(--success);
+}
+
+.yobo-toast--error {
+  border-color: color-mix(in oklab, var(--danger) 45%, var(--border));
+  background: color-mix(in oklab, var(--danger) 10%, var(--surface));
+}
+
+.yobo-toast--error .yobo-toast__icon {
+  color: var(--danger);
+}
+
+.yobo-toast--warning {
+  border-color: color-mix(in oklab, var(--accent) 45%, var(--border));
+  background: color-mix(in oklab, var(--accent-bg) 35%, var(--surface));
+}
+
+.yobo-toast--warning .yobo-toast__icon {
+  color: var(--accent);
+}
+
+@keyframes yobo-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* —— Pagination (tableaux & listes) —— */
+.yobo-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem 1rem;
+  padding: 0.65rem 1rem;
+  border-top: 1px solid var(--border);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--card) 55%, var(--surface)) 0%,
+    color-mix(in oklab, var(--surface) 88%, var(--card)) 100%
+  );
+}
+
+@media (min-width: 768px) {
+  .yobo-pagination {
+    padding: 0.75rem 1.25rem;
+  }
+}
+
+.yobo-pagination__meta {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.yobo-pagination__meta-sep {
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.yobo-pagination__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.yobo-pagination__pages {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.yobo-pagination__gap {
+  display: inline-flex;
+  min-width: 1.5rem;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--muted);
+  user-select: none;
+}
+
+.yobo-pagination__btn {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  min-height: 2rem;
+  padding: 0 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--card) 85%, var(--surface));
+  color: var(--text-h);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease,
+    filter 0.12s ease;
+}
+
+.yobo-pagination__btn:hover:not(:disabled) {
+  border-color: color-mix(in oklab, var(--accent-border) 70%, var(--border));
+  background: color-mix(in oklab, var(--accent-bg) 45%, var(--card));
+  color: var(--text-h);
+}
+
+.yobo-pagination__btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.yobo-pagination__btn--nav {
+  padding: 0 0.45rem;
+}
+
+.yobo-pagination__btn-text {
+  display: none;
+}
+
+@media (min-width: 480px) {
+  .yobo-pagination__btn-text {
+    display: inline;
+  }
+}
+
+.yobo-pagination__btn--num {
+  min-width: 2rem;
+  padding: 0 0.35rem;
+}
+
+.yobo-pagination__btn--active {
+  border-color: var(--accent-border);
+  background: color-mix(in oklab, var(--accent) 22%, var(--card));
+  color: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent) 25%, transparent);
+}
+
+.yobo-pagination__size {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.yobo-pagination__size-label {
+  font-size: 0.625rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.yobo-pagination__select {
+  min-height: 2rem;
+  padding: 0.2rem 1.75rem 0.2rem 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text-h);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 0.65rem) 0.85rem,
+    calc(100% - 0.45rem) 0.85rem;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.yobo-pagination__select:hover {
+  border-color: var(--accent-border);
+}
+
+.yobo-pagination__select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Menu contextuel app (hors champs natifs) */
+.yobo-context-menu {
+  min-width: 13.5rem;
+  max-width: min(18rem, calc(100vw - 1.25rem));
+  padding: 0.35rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.yobo-context-menu__item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: transparent;
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-h);
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+.yobo-context-menu__item:hover:not(:disabled) {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.yobo-context-menu__item:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+  color: var(--muted);
+}
+
+.yobo-context-menu__sep {
+  margin: 0.25rem 0.35rem;
+  height: 1px;
+  background: var(--border);
+}
+
+.yobo-context-menu__hint {
+  margin: 0.35rem 0.5rem 0.15rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+/* Clavier virtuel : marge vis-à-vis des bords (safe area tactile / encoche) */
+.yobo-vk-shell {
+  padding-bottom: max(0.85rem, env(safe-area-inset-bottom, 0px));
+}
+
+:root {
+  --vk-key-bg: #1b1b1b;
+  --vk-key-border: #262626;
+  --vk-key-text: #dedede;
+  --vk-key-mod-bg: #232323;
+  --vk-key-mod-text: var(--muted);
+  --vk-key-danger-border: color-mix(in oklab, var(--danger) 48%, #2a2a2a);
+}
+
+.yobo-vk-panel {
+  border-radius: 1.1rem;
+  border: 1px solid color-mix(in oklab, var(--accent) 28%, var(--border));
+  background: linear-gradient(180deg, #161616 0%, #101010 100%);
+  box-shadow:
+    0 22px 54px -24px rgba(0, 0, 0, 0.75),
+    0 0 0 1px color-mix(in oklab, var(--accent) 20%, transparent);
+}
+
+.yobo-vk-topline {
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-container));
+}
+
+.yobo-vk-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.7rem 0.9rem 0.55rem;
+}
+
+.yobo-vk-preview {
+  flex: 1;
+  min-width: 0;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in oklab, var(--border) 85%, transparent);
+  background: color-mix(in oklab, #232323 88%, transparent);
+  padding: 0.55rem 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.yobo-vk-preview-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--muted) 88%, #fff);
+  white-space: nowrap;
+}
+
+.yobo-vk-preview-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: color-mix(in oklab, var(--text-h) 95%, #fff);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.yobo-vk-close {
+  border: 1px solid color-mix(in oklab, var(--border) 90%, transparent);
+  border-radius: 0.65rem;
+  background: color-mix(in oklab, #232323 80%, transparent);
+  color: var(--muted);
+  padding: 0.45rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.yobo-vk-close:hover {
+  color: var(--text-h);
+  border-color: var(--accent-border);
+}
+
+.yobo-vk-mode-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding: 0 0.95rem 0.35rem;
+}
+
+.yobo-vk-mode-row span {
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--muted) 78%, #000);
+  opacity: 0.55;
+}
+
+.yobo-vk-mode-row span.is-active {
+  color: color-mix(in oklab, var(--text-h) 95%, #fff);
+  opacity: 1;
+}
+
+.yobo-vk-grid-wrap {
+  padding: 0.15rem 0.95rem 0.9rem;
+  display: grid;
+  gap: 0.34rem;
+}
+
+.yobo-vk-grid-row {
+  display: flex;
+  gap: 0.34rem;
+  align-items: center;
+}
+
+:root[data-theme='light'] .yobo-vk-panel {
+  border: 1px solid color-mix(in oklab, var(--accent) 24%, var(--border));
+  background: linear-gradient(180deg, #f4f4f4 0%, #ececec 100%);
+  box-shadow:
+    0 18px 42px -24px rgba(0, 0, 0, 0.22),
+    0 0 0 1px color-mix(in oklab, var(--accent) 14%, transparent);
+}
+
+:root[data-theme='light'] .yobo-vk-preview {
+  border: 1px solid color-mix(in oklab, var(--border) 85%, #fff);
+  background: #f7f7f7;
+}
+
+:root[data-theme='light'] .yobo-vk-preview-label {
+  color: color-mix(in oklab, var(--muted) 92%, #222);
+}
+
+:root[data-theme='light'] .yobo-vk-preview-value {
+  color: color-mix(in oklab, var(--text-h) 96%, #111);
+}
+
+:root[data-theme='light'] .yobo-vk-close {
+  border: 1px solid color-mix(in oklab, var(--border) 90%, #fff);
+  background: #f3f3f3;
+  color: color-mix(in oklab, var(--muted) 85%, #222);
+}
+
+:root[data-theme='light'] .yobo-vk-close:hover {
+  color: var(--text-h);
+  border-color: var(--accent-border);
+  background: #ffffff;
+}
+
+:root[data-theme='light'] {
+  --vk-key-bg: #f6f6f6;
+  --vk-key-border: #d2d2d2;
+  --vk-key-text: #1f1f1f;
+  --vk-key-mod-bg: #ececec;
+  --vk-key-mod-text: #4a4a4a;
+  --vk-key-danger-border: color-mix(in oklab, var(--danger) 35%, var(--border));
+}
+
+/* react-simple-keyboard — alignement charte YOBO */
+.simple-keyboard.yobo-simple-keyboard {
+  border-radius: 1.1rem;
+  background: transparent;
+  font-family: var(--sans);
+  padding: 0.25rem 0.15rem 0.35rem;
+}
+
+.simple-keyboard.yobo-simple-keyboard .hg-row {
+  gap: 0.45rem;
+  margin-bottom: 0.45rem;
+}
+
+.simple-keyboard.yobo-simple-keyboard .hg-button {
+  min-height: 3rem;
+  border-radius: 0.8rem;
+  border: 1px solid #262626;
+  background: linear-gradient(
+    180deg,
+    #1e1e1e 0%,
+    #181818 100%
+  );
+  color: #d8d8d8;
+  font-size: 0.98rem;
+  font-weight: 700;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 1px 0 rgba(0, 0, 0, 0.75);
+  transition:
+    transform 0.08s ease,
+    filter 0.16s ease,
+    border-color 0.16s ease,
+    background 0.16s ease,
+    color 0.16s ease;
+}
+
+.simple-keyboard.yobo-simple-keyboard .hg-button:active {
+  transform: translateY(1px) scale(0.99);
+  background: #121212;
+  border-color: color-mix(in oklab, var(--accent) 50%, #232323);
+  color: color-mix(in oklab, var(--accent) 84%, #fff);
+}
+
+.simple-keyboard.yobo-simple-keyboard .hg-button.hg-activeButton {
+  background: #141414;
+  border-color: color-mix(in oklab, var(--accent) 52%, #2a2a2a);
+  color: color-mix(in oklab, var(--accent) 88%, #fff);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--accent) 24%, transparent),
+    0 8px 18px -14px color-mix(in oklab, var(--accent) 52%, transparent);
+}
+
+/* Maj enfoncée : layout « shift » actif */
+.simple-keyboard.yobo-simple-keyboard.hg-layout-shift .hg-button-shift {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-container) 100%);
+  border-color: color-mix(in oklab, var(--accent) 65%, var(--border));
+  color: #4d2600;
+}
+
+.simple-keyboard.yobo-simple-keyboard .hg-button-space,
+.simple-keyboard.yobo-simple-keyboard .hg-button-enter,
+.simple-keyboard.yobo-simple-keyboard .hg-button-shift {
+  font-weight: 800;
+}
+
+.simple-keyboard.yobo-simple-keyboard .hg-button-space {
+  letter-spacing: 0.02em;
+}
+
+.simple-keyboard.yobo-simple-keyboard .hg-button-enter {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-container) 100%);
+  border-color: color-mix(in oklab, var(--accent) 68%, var(--border));
+  color: #4d2600;
+}
+
+.simple-keyboard.yobo-simple-keyboard .hg-button-bksp,
+.simple-keyboard.yobo-simple-keyboard .hg-button-clear {
+  background: color-mix(in oklab, var(--surface) 60%, var(--card));
+  color: var(--muted);
+}
+
+@media (max-width: 720px) {
+  .simple-keyboard.yobo-simple-keyboard .hg-button {
+    min-height: 2.85rem;
+    font-size: 0.96rem;
+    border-radius: 0.72rem;
+  }
+}
+
+/* Voile plein écran : login / splash masqués si autre app au premier plan (anti-regard). */
+.yobo-login-privacy-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 7000;
+  pointer-events: auto;
+  background-color: #0a0a0a;
+  background-image:
+    radial-gradient(ellipse 100% 75% at 50% -25%, rgba(249, 115, 22, 0.14) 0%, transparent 52%),
+    linear-gradient(180deg, #101010 0%, #080808 100%);
+}
+
+:root[data-theme='light'] .yobo-login-privacy-veil {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse 100% 75% at 50% -25%, rgba(249, 115, 22, 0.12) 0%, transparent 52%),
+    linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+}
+
+/* ── Page de connexion : même univers visuel que le splash (sombre + orange, pro) ── */
+.login-page-shell {
+  --login-r: 0.75rem;
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.35rem 0.65rem 1.85rem;
+  color-scheme: dark;
+  color: rgba(255, 255, 255, 0.9);
+  background-color: #0a0a0a;
+  background-image:
+    radial-gradient(ellipse 100% 75% at 50% -25%, rgba(249, 115, 22, 0.22) 0%, transparent 52%),
+    radial-gradient(ellipse 45% 40% at 100% 100%, rgba(249, 115, 22, 0.1) 0%, transparent 48%),
+    linear-gradient(180deg, #101010 0%, #080808 100%);
+}
+
+.login-page-main {
+  width: 100%;
+  max-width: 19.5rem;
+}
+
+.login-page-main-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  margin-bottom: 0.85rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--login-r);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.login-page-eyebrow {
+  margin: 0;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(249, 115, 22, 0.95);
+}
+
+.login-page-theme-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.65rem;
+  border-radius: calc(var(--login-r) * 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.65);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.login-page-theme-btn:hover {
+  border-color: rgba(249, 115, 22, 0.45);
+  background: rgba(249, 115, 22, 0.1);
+  color: #fff;
+}
+
+.login-page-tagline {
+  margin: 0.75rem 0 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.login-page-role-wrap {
+  display: flex;
+  gap: 0;
+  margin: 1.1rem 0 1.3rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--login-r);
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.login-page-role-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: -1px;
+  padding: 0.75rem 0.35rem 0.85rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.login-page-role-btn:hover:not(.login-page-role-btn--active) {
+  background: rgba(249, 115, 22, 0.05);
+}
+
+.login-page-role-btn--active {
+  border-bottom-color: #f97316;
+  background: rgba(249, 115, 22, 0.08);
+}
+
+.login-page-role-btn .login-page-role-title {
+  margin-top: 0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.login-page-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Champs login (variantes sombre / clair via `data-theme`) */
+.login-page-main .yobo-field-label {
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.login-page-main .yobo-input {
+  border-radius: var(--login-r);
+  background: rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f5f5f5;
+}
+
+.login-page-main .yobo-input::placeholder {
+  color: rgba(255, 255, 255, 0.32);
+}
+
+.login-page-main .yobo-input:focus {
+  border-color: #f97316;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.28);
+}
+
+.login-page-main .yobo-btn-accent {
+  border-radius: var(--login-r);
+}
+
+.login-page-foot {
+  margin: 1.35rem 0 0;
+  text-align: center;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Login + splash : variante claire (suit `data-theme`) */
+:root[data-theme='light'] .login-page-shell {
+  color-scheme: light;
+  color: var(--text-h);
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse 100% 75% at 50% -25%, rgba(249, 115, 22, 0.14) 0%, transparent 52%),
+    radial-gradient(ellipse 45% 40% at 100% 100%, rgba(249, 115, 22, 0.08) 0%, transparent 48%),
+    linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+}
+
+:root[data-theme='light'] .login-page-main-head {
+  border-color: var(--border);
+  background: color-mix(in oklab, var(--card) 88%, var(--accent-bg));
+}
+
+:root[data-theme='light'] .login-page-theme-btn {
+  border-color: var(--border);
+  background: var(--card);
+  color: var(--muted);
+}
+
+:root[data-theme='light'] .login-page-theme-btn:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--text-h);
+}
+
+:root[data-theme='light'] .login-page-tagline {
+  color: var(--muted);
+}
+
+:root[data-theme='light'] .login-page-role-wrap {
+  border-color: var(--border);
+  background: color-mix(in oklab, var(--card) 90%, transparent);
+}
+
+:root[data-theme='light'] .login-page-role-btn:hover:not(.login-page-role-btn--active) {
+  background: var(--accent-bg);
+}
+
+:root[data-theme='light'] .login-page-role-btn--active {
+  background: color-mix(in oklab, var(--accent-bg) 65%, var(--card));
+}
+
+:root[data-theme='light'] .login-page-role-btn .login-page-role-title {
+  color: var(--text-h);
+}
+
+:root[data-theme='light'] .login-page-role-icon {
+  color: var(--accent);
+}
+
+:root[data-theme='light'] .login-page-main .yobo-field-label {
+  color: var(--muted);
+}
+
+:root[data-theme='light'] .login-page-main .yobo-input {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text-h);
+}
+
+:root[data-theme='light'] .login-page-main .yobo-input::placeholder {
+  color: color-mix(in oklab, var(--muted) 75%, transparent);
+}
+
+:root[data-theme='light'] .login-page-foot {
+  color: var(--muted);
+}
+
+:root[data-theme='light'] .login-page-splash {
+  color-scheme: light;
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse 100% 75% at 50% -25%, rgba(249, 115, 22, 0.14) 0%, transparent 52%),
+    radial-gradient(ellipse 45% 40% at 100% 100%, rgba(249, 115, 22, 0.08) 0%, transparent 48%),
+    linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+}
+
+:root[data-theme='light'] .login-page-splash-sub {
+  color: var(--text-h);
+}
+
+/* Splash : fond toujours sombre (identique au shell login) */
+.login-page-splash {
+  --login-r: 0.75rem;
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  color-scheme: dark;
+  background-color: #0a0a0a;
+  background-image:
+    radial-gradient(ellipse 100% 75% at 50% -25%, rgba(249, 115, 22, 0.22) 0%, transparent 52%),
+    radial-gradient(ellipse 45% 40% at 100% 100%, rgba(249, 115, 22, 0.1) 0%, transparent 48%),
+    linear-gradient(180deg, #101010 0%, #080808 100%);
+  transition-property: opacity, visibility;
+  transition-timing-function: ease;
+}
+
+.login-page-splash--out {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Logo image (splash + écran login) — remplace le mot « YOBO » */
+.login-page-brand-img {
+  display: block;
+  height: auto;
+  max-width: min(88vw, 17rem);
+  object-fit: contain;
+}
+
+.login-page-brand-img--splash {
+  max-width: min(92vw, 22rem);
+  max-height: min(30vh, 10.5rem);
+  border-radius: var(--login-r);
+  filter: drop-shadow(0 8px 28px rgba(0, 0, 0, 0.35));
+}
+
+:root[data-theme='light'] .login-page-brand-img--splash {
+  filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.12));
+}
+
+.login-page-brand-img--main {
+  max-width: min(100%, 17rem);
+  max-height: 5.5rem;
+  border-radius: calc(var(--login-r) * 0.9);
+  filter: drop-shadow(0 6px 22px rgba(0, 0, 0, 0.45));
+}
+
+:root[data-theme='light'] .login-page-brand-img--main {
+  filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.1));
+}
+
+.login-page-splash-logo-slot {
+  min-height: min(30vh, 10.5rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-page-role-icon {
+  display: block;
+  width: 1.85rem;
+  height: 1.85rem;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.login-page-role-btn--active .login-page-role-icon {
+  color: var(--accent);
+}
+
+.login-page-splash-sub {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.login-page-splash-dots {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.login-page-splash-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px color-mix(in oklab, var(--accent) 55%, transparent);
+  animation: login-page-splash-dot 1.1s ease-in-out infinite;
+}
+
+.login-page-splash-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.login-page-splash-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes login-page-splash-dot {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+    filter: brightness(0.85);
+  }
+
+  40% {
+    transform: translateY(-8px);
+    opacity: 1;
+    filter: brightness(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-page-splash-dots span {
+    animation: none;
+    opacity: 0.92;
+    filter: none;
+  }
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+/* —— Global Premium Animations & Transitions —— */
+
+@keyframes yobo-fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.yobo-animate-in {
+  animation: yobo-fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.yobo-glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.yobo-card-premium {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.5);
+}
+
+.yobo-card-premium:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.6);
+  border-color: var(--accent-border);
+}
+
+/* Page transitions utility */
+main > div {
+  animation: yobo-fade-in-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Refined Glow Effects */
+.yobo-glow-accent {
+  box-shadow: 0 0 25px -5px var(--accent-bg);
+}
+
+.yobo-glow-accent:hover {
+  box-shadow: 0 0 40px -5px var(--accent-border);
+}

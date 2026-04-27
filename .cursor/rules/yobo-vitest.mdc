@@ -1,0 +1,20 @@
+---
+description: Tests Vitest — lib pure, pas de Tauri
+globs: src/**/*.test.ts
+alwaysApply: false
+---
+
+# Où tester
+
+- **Priorité** : fonctions pures dans `src/lib/` (parse, pagination, formats, règles tailles, `userFacingError`, `toastTypeForStoreMessage`).
+- **Éviter** pour l’instant : tests du store complet ou des composants sans stratégie de mock `invoke` partagée.
+
+# Conventions
+
+- Fichier colocalisé : `monModule.test.ts` à côté de `monModule.ts`.
+- Importer explicitement depuis `vitest` : `import { describe, it, expect } from 'vitest'` (pas de globals obligatoires).
+- `userFacingErrorMessage` : les assertions peuvent dépendre de `import.meta.env.PROD` (voir tests existants).
+
+# Commandes
+
+- `npm run test` (CI) ; `npm run test:watch` en local.

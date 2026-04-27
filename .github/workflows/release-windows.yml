@@ -1,0 +1,36 @@
+# Build Windows NSIS et publie l’installateur en artefact (sans pipeline de mises à jour intégrées).
+
+name: Release Windows
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Frontend + Tauri release
+        run: |
+          npm run build
+          npx tauri build
+
+      - name: Artefacts (installateur NSIS)
+        uses: actions/upload-artifact@v4
+        with:
+          name: yobo-windows-installer
+          path: src-tauri/target/release/bundle/nsis/*_x64-setup.exe
