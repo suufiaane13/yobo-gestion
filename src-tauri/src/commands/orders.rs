@@ -257,7 +257,7 @@ pub fn create_order(
     Some(user_id),
     "order",
     "create",
-    Some(&format!("#{} {:.2} MAD", order_id, total)),
+    Some(&format!("ID {} - {} MAD", order_id, total)),
     Some(&order_meta),
   );
 
@@ -553,7 +553,7 @@ pub fn orders_cancel(user_id: i64, order_id: i64, reason: String) -> Result<Orde
     Some(user_id),
     "order",
     "cancel",
-    Some(&format!("#{} annulée", order_id)),
+    Some(&format!("ID {} annulée", order_id)),
     Some(&format!("order_id={} reason={}", order_id, reason)),
   );
 

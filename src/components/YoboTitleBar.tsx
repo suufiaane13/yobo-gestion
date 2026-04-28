@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getCurrentWindow } from '@tauri-apps/api/window'
+import { YoboUpdater } from './YoboUpdater'
 
 type YoboTitleBarProps = {
   /** Ex. « Gérant : Marie » / « Caissier : Ali » */
@@ -200,6 +201,7 @@ export function YoboTitleBar({
   const appWindow = getCurrentWindow()
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [now, setNow] = useState(() => new Date())
+  const [showUpdater, setShowUpdater] = useState(false)
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(new Date()), 1000)
@@ -302,6 +304,26 @@ export function YoboTitleBar({
               >
                 {theme === 'dark' ? <IconThemeSun /> : <IconThemeMoon />}
               </button>
+
+              <span className="yobo-titlebar__action-sep" aria-hidden />
+              
+              <div className="yobo-titlebar__updater-wrapper">
+                <button
+                  type="button"
+                  className={`yobo-titlebar__btn ${showUpdater ? 'yobo-titlebar__btn--active' : ''}`}
+                  title="Mise à jour"
+                  onClick={() => setShowUpdater(!showUpdater)}
+                >
+                  <span className="material-symbols-outlined text-[18px]">cloud_download</span>
+                </button>
+                
+                {showUpdater && (
+                  <div className="yobo-titlebar__updater-dropdown">
+                    <YoboUpdater />
+                  </div>
+                )}
+              </div>
+
               <span className="yobo-titlebar__action-sep" aria-hidden />
               <button
                 type="button"

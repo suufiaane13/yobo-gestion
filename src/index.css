@@ -405,7 +405,8 @@ html {
 .yobo-titlebar__actions {
   display: flex;
   flex-shrink: 0;
-  align-items: stretch;
+  align-items: center;
+  padding-right: 20px;
   -webkit-app-region: no-drag;
 }
 
@@ -458,6 +459,7 @@ html {
   background: color-mix(in oklab, var(--card) 92%, var(--text-h) 8%);
   color: var(--text-h);
   transform: translateY(-0.5px);
+  box-shadow: 0 0 0 2px var(--accent); /* Bordure large au survol */
 }
 
 .yobo-titlebar__btn:active {
@@ -475,57 +477,116 @@ html {
 
 
 .yobo-titlebar__btn--close:hover {
-  background: color-mix(in oklab, var(--danger) 85%, #000);
+  background: #ff3b30;
   color: #fff;
-  box-shadow: 0 4px 12px -2px color-mix(in oklab, var(--danger) 35%, transparent);
+  transform: translateY(-0.5px) scale(1.08);
+  box-shadow: 0 0 0 2px #ff3b30, 0 8px 20px -4px rgba(255, 59, 48, 0.6);
+}
+
+.yobo-titlebar__btn--close:hover .yobo-titlebar__icon {
+  transform: rotate(90deg);
+  stroke-width: 3px;
+}
+
+.yobo-titlebar__icon {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.yobo-titlebar__updater-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.yobo-titlebar__updater-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: -8px;
+  width: 340px;
+  z-index: 100;
+  background: color-mix(in oklab, var(--surface) 90%, transparent);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 
+    0 10px 30px -10px rgba(0,0,0,0.5),
+    0 4px 10px -2px rgba(0,0,0,0.2);
+  animation: yobo-updater-slide 0.25s cubic-bezier(0, 1, 0, 1);
+  overflow: visible;
+}
+
+/* Flèche (Arrow) */
+.yobo-titlebar__updater-dropdown::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  right: 18px;
+  width: 12px;
+  height: 12px;
+  background: inherit;
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+  transform: rotate(45deg);
+  z-index: -1;
+}
+
+@keyframes yobo-updater-slide {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.yobo-titlebar__btn--active {
+  color: var(--accent) !important;
+  background: var(--accent-bg) !important;
 }
 
 /* Badge Utilisateur Premium (Antigravity Style) */
 .yobo-titlebar__user-badge {
-  my-auto: auto;
-  margin: auto 4px auto 8px;
+  margin: auto 10px;
   display: flex;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.3rem 0.65rem;
-  border-radius: 9999px;
-  border: 1px solid var(--border);
-  background: color-mix(in oklab, var(--surface) 45%, transparent);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
+  gap: 0.6rem;
+  padding: 4px 12px 4px 8px;
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--surface) 60%, transparent);
+  border: 1px solid color-mix(in oklab, var(--border) 30%, transparent);
+  border-left: 2px solid var(--muted);
+  backdrop-filter: blur(4px);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   min-width: 0;
   cursor: default;
 }
 
 .yobo-titlebar__user-badge--gerant {
-  border-color: color-mix(in oklab, var(--accent) 35%, var(--border));
+  border-left-color: var(--accent);
   background: linear-gradient(
-    135deg,
-    color-mix(in oklab, var(--accent-bg) 75%, transparent) 0%,
-    color-mix(in oklab, var(--surface) 55%, transparent) 100%
+    90deg,
+    color-mix(in oklab, var(--accent-bg) 40%, transparent) 0%,
+    color-mix(in oklab, var(--surface) 60%, transparent) 100%
   );
-  box-shadow: 0 2px 8px -3px color-mix(in oklab, var(--accent) 25%, transparent);
+  box-shadow: inset 0 0 12px -4px color-mix(in oklab, var(--accent) 15%, transparent);
 }
 
 .yobo-titlebar__user-icon {
-  font-size: 13.5px !important;
+  font-size: 16px !important;
   color: var(--muted);
+  opacity: 0.8;
 }
 
 .yobo-titlebar__user-badge--gerant .yobo-titlebar__user-icon {
   color: var(--accent);
+  opacity: 1;
 }
 
 .yobo-titlebar__user-name {
-  max-width: 7.5rem;
-  truncate: truncate;
+  max-width: 9rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   color: var(--text-h);
 }
 

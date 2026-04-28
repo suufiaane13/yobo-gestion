@@ -65,24 +65,24 @@ export function YoboUpdater() {
   }
 
   return (
-    <div className="rounded-2xl bg-[var(--surface)] p-6 ring-1 ring-[var(--border)]">
-      <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
-        <div className="space-y-1">
-          <h4 className="text-sm font-black text-[var(--text-h)]">Mise à jour du logiciel</h4>
-          <p className="text-[10px] font-bold text-[var(--muted)]">
-            Vérifiez si une nouvelle version de YOBO est disponible.
+    <div className="rounded-xl bg-transparent p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-0.5">
+          <h4 className="text-[13px] font-black text-[var(--text-h)]">Mise à jour</h4>
+          <p className="text-[9px] font-bold text-[var(--muted)]">
+            Vérifiez si une version est disponible.
           </p>
         </div>
 
         {!updateInfo ? (
           <button
             type="button"
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[var(--card)] border border-[var(--border)] px-6 text-xs font-black text-[var(--text-h)] shadow-sm transition hover:border-[var(--accent)]/50"
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-[var(--card)] border border-[var(--border)] px-4 text-[11px] font-black text-[var(--text-h)] shadow-sm transition hover:border-[var(--accent)]/50"
             onClick={handleCheck}
             disabled={checking}
           >
-            {checking ? <SpinnerIcon size={14} /> : <span className="material-symbols-outlined text-[18px]">update</span>}
-            Vérifier maintenant
+            {checking ? <SpinnerIcon size={12} /> : <span className="material-symbols-outlined text-[16px]">update</span>}
+            Vérifier
           </button>
         ) : (
           <div className="flex flex-col items-center gap-3 sm:flex-row">
@@ -92,11 +92,11 @@ export function YoboUpdater() {
             </div>
             <button
               type="button"
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[var(--accent)] to-[var(--accent-container)] px-6 text-xs font-black text-[#4d2600] shadow-lg shadow-[var(--accent)]/20 transition hover:brightness-110 disabled:opacity-50"
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[var(--accent)] to-[var(--accent-container)] px-4 text-[11px] font-black text-[#4d2600] shadow-lg shadow-[var(--accent)]/20 transition hover:brightness-110 disabled:opacity-50"
               onClick={handleUpdate}
               disabled={updating}
             >
-              {updating ? <SpinnerIcon size={14} /> : <span className="material-symbols-outlined text-[18px]">download</span>}
+              {updating ? <SpinnerIcon size={12} /> : <span className="material-symbols-outlined text-[16px]">download</span>}
               Installer {progress !== null ? `(${progress}%)` : ''}
             </button>
           </div>

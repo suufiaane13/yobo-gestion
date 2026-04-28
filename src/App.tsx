@@ -4,6 +4,7 @@ import { YoboAppNavBar } from './components/YoboAppNavBar'
 import { YoboAppModals } from './components/YoboAppModals'
 import { YoboTitleBar } from './components/YoboTitleBar'
 import { isTauriRuntime } from './lib/isTauriRuntime'
+import { getCurrentWindow } from '@tauri-apps/api/window'
 import { YoboToastStack } from './components/YoboToastStack'
 import { capitalizeFirstLetter } from './lib/yoboStrings'
 import { CaissePage } from './pages/CaissePage'
@@ -63,7 +64,13 @@ export default function App() {
           authed={authed}
           onToggleTheme={toggleTheme}
           onLogout={requestLogout}
-          onCloseRequest={() => setExitConfirmOpen(true)}
+          onCloseRequest={() => {
+            if (authed) {
+              setExitConfirmOpen(true)
+            } else {
+              void getCurrentWindow().close()
+            }
+          }}
         />
       ) : null}
       <YoboToastStack />

@@ -596,10 +596,12 @@ export function GerantLogsPage({ userId }: { userId: number }) {
                             )}
                             {l.description && (
                               <p className="line-clamp-2 text-[11px] leading-relaxed text-[var(--muted)] opacity-80">
-                                {l.description}
+                                {l.actionType === 'order' && l.action === 'create'
+                                  ? l.description.replace(/^#(\d+)\s+([\d.]+)\s+MAD$/, 'ID $1 - $2 MAD')
+                                  : l.description}
                               </p>
                             )}
-                            {id && !resolvedName && (
+                            {id && !resolvedName && l.actionType !== 'order' && (
                               <p className="text-[9px] text-[var(--muted)] opacity-50">ID: {id}</p>
                             )}
                           </div>
