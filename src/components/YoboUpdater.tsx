@@ -16,7 +16,6 @@ export function YoboUpdater() {
   const updateVersionSeen = useYoboStore((s) => s.updateVersionSeen)
   const setUpdateSeen = useYoboStore((s) => s.setUpdateSeen)
 
-  const UPDATE_URL = 'https://raw.githubusercontent.com/suufiaane13/yobo-gestion/main/updater/windows-x86_64.json'
 
   const handleUpdate = useCallback(async (isAuto = false) => {
     setUpdating(true)
