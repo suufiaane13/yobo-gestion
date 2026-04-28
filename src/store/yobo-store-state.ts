@@ -27,6 +27,7 @@ export interface YoboState {
   identifier: string
   pin: string
   theme: Theme
+  avatar: string | null
   /** Comment choisir clair/sombre quand ce n’est pas piloté uniquement par `theme`. */
   themePreference: ThemePreference
   error: string | null
@@ -152,6 +153,9 @@ export interface YoboState {
   gratinePrice: number
   /** Données bitmap du logo pour impression thermique. */
   ticketLogo: BitmapData | null
+  /** Pour l'installation forcée après 7 jours */
+  updateFirstSeenAt: string | null
+  updateVersionSeen: string | null
 }
 
 export function createInitialYoboState(): YoboState {
@@ -161,6 +165,7 @@ export function createInitialYoboState(): YoboState {
     identifier: '',
     pin: '',
     theme: 'dark',
+    avatar: null,
     themePreference: 'manual',
     error: null,
     userId: null,
@@ -267,5 +272,7 @@ export function createInitialYoboState(): YoboState {
     exitConfirmOpen: false,
     gratinePrice: 5,
     ticketLogo: null,
+    updateFirstSeenAt: null,
+    updateVersionSeen: null,
   }
 }

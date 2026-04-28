@@ -9,6 +9,7 @@ pub struct AuthLoginResponse {
   user_id: i64,
   role: String,
   theme: String,
+  avatar: Option<String>,
 }
 
 #[tauri::command]
@@ -42,14 +43,14 @@ pub fn auth_login(
     // mettre une majuscule initiale (tactile, saisie automatique) et SQLite `=` est sensible par défaut.
     let row = conn
       .query_row(
-        "SELECT id, password, theme FROM users WHERE role=?1 AND active=1 AND lower(name) = lower(?2) LIMIT 1",
+        "SELECT id, password, theme, avatar FROM users WHERE role=?1 AND active=1 AND lower(name) = lower(?2) LIMIT 1",
         params![role_norm, name],
-        |r| Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?, r.get::<_, String>(2)?)),
+        |r| Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?, r.get::<_, String>(2)?, r.get::<_, Option<String>>(3)?)),
       )
       .optional()
       .map_err(|e| e.to_string())?;
 
-    let Some((user_id, password_hash, theme)) = row else {
+    let Some((user_id, password_hash, theme, avatar)) = row else {
       let _ = db::append_log(
         &conn,
         None,
@@ -85,6 +86,7 @@ pub fn auth_login(
       user_id,
       role: role_norm,
       theme,
+      avatar,
     });
   }
 
@@ -96,14 +98,14 @@ pub fn auth_login(
 
   let row = conn
     .query_row(
-      "SELECT id, password, theme FROM users WHERE role=?1 AND active=1 AND lower(name) = lower(?2) LIMIT 1",
+      "SELECT id, password, theme, avatar FROM users WHERE role=?1 AND active=1 AND lower(name) = lower(?2) LIMIT 1",
       params![role_norm, name],
-      |r| Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?, r.get::<_, String>(2)?)),
+      |r| Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?, r.get::<_, String>(2)?, r.get::<_, Option<String>>(3)?)),
     )
     .optional()
     .map_err(|e| e.to_string())?;
 
-  let Some((user_id, password_hash, theme)) = row else {
+  let Some((user_id, password_hash, theme, avatar)) = row else {
     db::append_log_best_effort(
       &conn,
       None,
@@ -139,6 +141,7 @@ pub fn auth_login(
     user_id,
     role: role_norm,
     theme,
+    avatar,
   })
 }
 

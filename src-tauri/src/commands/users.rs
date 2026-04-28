@@ -11,6 +11,7 @@ pub struct CaissierDto {
   pub role: String,
   pub active: bool,
   pub theme: String,
+  pub avatar: Option<String>,
   pub created_at: String,
 }
 
@@ -21,6 +22,7 @@ pub struct UserProfileDto {
   pub name: String,
   pub role: String,
   pub active: bool,
+  pub avatar: Option<String>,
   pub created_at: String,
 }
 
@@ -51,7 +53,7 @@ pub fn list_caissiers(role: String, user_id: i64) -> Result<Vec<CaissierDto>, St
 
   let mut stmt = conn
     .prepare(
-      "SELECT id, name, role, active, theme, created_at
+      "SELECT id, name, role, active, theme, created_at, avatar
        FROM users
        WHERE role='caissier'
        ORDER BY active DESC, id DESC",
@@ -69,6 +71,7 @@ pub fn list_caissiers(role: String, user_id: i64) -> Result<Vec<CaissierDto>, St
       active: row.get::<_, i64>(3).map_err(|e| e.to_string())? == 1,
       theme: row.get(4).map_err(|e| e.to_string())?,
       created_at: row.get(5).map_err(|e| e.to_string())?,
+      avatar: row.get(6).ok(),
     })
   }
 
@@ -119,7 +122,7 @@ pub fn create_caissier(
 
   let dto = conn
     .query_row(
-      "SELECT id, name, role, active, theme, created_at
+      "SELECT id, name, role, active, theme, created_at, avatar
        FROM users
        WHERE id=?1",
       params![id],
@@ -131,6 +134,7 @@ pub fn create_caissier(
           active: r.get::<_, i64>(3)? == 1,
           theme: r.get(4)?,
           created_at: r.get(5)?,
+          avatar: r.get(6).ok(),
         })
       },
     )
@@ -342,7 +346,7 @@ pub fn get_user_profile(role: String, user_id: i64) -> Result<UserProfileDto, St
 
   let row = conn
     .query_row(
-      "SELECT id, name, role, active, created_at FROM users WHERE id=?1 AND role=?2 LIMIT 1",
+      "SELECT id, name, role, active, created_at, avatar FROM users WHERE id=?1 AND role=?2 LIMIT 1",
       params![user_id, role_norm],
       |r| {
         Ok(UserProfileDto {
@@ -351,6 +355,7 @@ pub fn get_user_profile(role: String, user_id: i64) -> Result<UserProfileDto, St
           role: r.get(2)?,
           active: r.get::<_, i64>(3)? == 1,
           created_at: r.get(4)?,
+          avatar: r.get(5).ok(),
         })
       },
     )
@@ -449,5 +454,33 @@ pub fn verify_any_gerant_pin(pin: String) -> Result<(), String> {
   } else {
     Err("PIN Gérant invalide.".to_string())
   }
+}
+
+#[tauri::command]
+pub fn update_user_avatar(role: String, user_id: i64, avatar: String) -> Result<(), String> {
+  let conn = db::open_db_file()?;
+  db::ensure_schema(&conn)?;
+
+  let role_norm = role.trim().to_lowercase();
+  if role_norm != "gerant" && role_norm != "caissier" {
+    return Err("Rôle invalide.".to_string());
+  }
+
+  conn.execute(
+    "UPDATE users SET avatar = ?1 WHERE id = ?2 AND role = ?3",
+    params![avatar, user_id, role_norm],
+  )
+  .map_err(|e| e.to_string())?;
+
+  db::append_log_best_effort(
+    &conn,
+    Some(user_id),
+    "profile",
+    "change_avatar",
+    Some(&avatar),
+    None,
+  );
+
+  Ok(())
 }
 

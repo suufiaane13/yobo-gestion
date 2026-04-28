@@ -73,6 +73,7 @@ pub fn run() {
       commands::users::get_user_profile,
       commands::users::change_user_name,
       commands::users::verify_any_gerant_pin,
+      commands::users::update_user_avatar,
       commands::system::relaunch
     ])
     .run(tauri::generate_context!())

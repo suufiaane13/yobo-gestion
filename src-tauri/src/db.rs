@@ -121,6 +121,21 @@ pub fn migrate_schema(conn: &Connection) -> Result<(), String> {
       .map_err(|e| e.to_string())?;
   }
 
+  // Ajout de la colonne avatar pour les utilisateurs
+  let user_cols: Vec<String> = conn
+    .prepare("PRAGMA table_info(users)")
+    .map_err(|e| e.to_string())?
+    .query_map([], |row| row.get::<_, String>(1))
+    .map_err(|e| e.to_string())?
+    .filter_map(|r| r.ok())
+    .collect();
+
+  if !user_cols.iter().any(|c| c == "avatar") {
+    conn
+      .execute("ALTER TABLE users ADD COLUMN avatar TEXT", [])
+      .map_err(|e| e.to_string())?;
+  }
+
   Ok(())
 }
 
@@ -134,6 +149,7 @@ pub fn ensure_schema(conn: &Connection) -> Result<(), String> {
       password    TEXT NOT NULL,
       active      INTEGER DEFAULT 1,
       theme       TEXT DEFAULT 'dark',
+      avatar      TEXT,
       created_at  TEXT DEFAULT (datetime('now'))
     );
 

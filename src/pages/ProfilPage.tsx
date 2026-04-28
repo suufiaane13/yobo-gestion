@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
+import { getVersion } from '@tauri-apps/api/app'
 import { useShallow } from 'zustand/shallow'
 import { YoboAlphaInput, YoboNumericInput } from '../components/YoboKeyboardInputs'
 import { SpinnerIcon } from '../components/icons/SpinnerIcon'
@@ -11,6 +12,7 @@ import { client } from '../lib/yoboClientMessages'
 import { capitalizeFirstLetter, firstLetterUpper } from '../lib/yoboStrings'
 import { useYoboStore } from '../store'
 import { YoboUpdater } from '../components/YoboUpdater'
+import { YoboAvatarPicker, YoboAvatarDisplay } from '../components/YoboAvatarPicker'
 
 const THEME_PREF_OPTIONS: { value: ThemePreference; label: string; hint: string }[] = [
   { value: 'manual', label: 'Manuel (clair / sombre)', hint: 'Bouton dans la barre de titre ou ci-dessous.' },
@@ -56,6 +58,13 @@ export function ProfilPage() {
   const [ticketDraftPhone, setTicketDraftPhone] = useState('')
   const [ticketSaving, setTicketSaving] = useState(false)
   const [printers, setPrinters] = useState<string[]>([])
+  const [appVersion, setAppVersion] = useState('')
+
+  useEffect(() => {
+    if (isTauriRuntime()) {
+      void getVersion().then(setAppVersion)
+    }
+  }, [])
 
   useEffect(() => {
     if (role !== 'gerant') return
@@ -130,8 +139,14 @@ export function ProfilPage() {
           <div className="overflow-hidden rounded-2xl bg-[var(--card)] shadow-[0_8px_32px_-12px_rgba(0,0,0,0.4)] ring-1 ring-[var(--border)]">
             {/* User Preview Header */}
             <div className="border-b border-[var(--border)] bg-[var(--surface)] p-6 text-center">
-              <div className="mx-auto mb-3 flex size-20 items-center justify-center rounded-2xl bg-gradient-to-tr from-[var(--accent)] to-[var(--accent-container)] text-2xl font-black text-white shadow-lg ring-4 ring-[var(--card)]">
-                {profileUserProfile ? firstLetterUpper(profileUserProfile.name) : <span className="material-symbols-outlined text-3xl">person</span>}
+              <div className="mx-auto mb-3 flex items-center justify-center">
+                {profileUserProfile?.avatar ? (
+                  <YoboAvatarDisplay id={profileUserProfile.avatar} size="xl" className="ring-4 ring-[var(--card)]" />
+                ) : (
+                  <div className="flex size-20 items-center justify-center rounded-2xl bg-gradient-to-tr from-[var(--accent)] to-[var(--accent-container)] text-2xl font-black text-white shadow-lg ring-4 ring-[var(--card)] transition-all duration-300 hover:scale-110 hover:rotate-3 active:scale-90 cursor-pointer">
+                    {profileUserProfile ? firstLetterUpper(profileUserProfile.name) : <span className="material-symbols-outlined text-3xl">person</span>}
+                  </div>
+                )}
               </div>
               <div className="truncate text-sm font-black tracking-tight text-[var(--text-h)]">
                 {profileUserProfile ? capitalizeFirstLetter(profileUserProfile.name) : 'Utilisateur'}
@@ -164,7 +179,7 @@ export function ProfilPage() {
 
           {/* Support/Info box */}
           <div className="mt-4 p-4 text-center text-[10px] font-bold text-[var(--muted)] opacity-50">
-            YOBO POS v2.0.0<br />Design & Performance
+            YOBO {appVersion ? `v${appVersion}` : ''}<br />Design & Performance
           </div>
         </aside>
 
@@ -182,34 +197,53 @@ export function ProfilPage() {
                 </div>
                 <div className="p-6">
                   {isGerant ? (
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-                      <div className="flex-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--muted)]">Nom affiché</label>
-                        <YoboAlphaInput
-                          className="yobo-input mt-1.5 w-full font-bold"
-                          value={profileNameDraft}
-                          onValueChange={setProfileNameDraft}
-                          placeholder="Votre nom"
-                          keyboardMaxLength={80}
-                        />
+                    <div className="space-y-6">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+                        <div className="flex-1">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-[var(--muted)]">Nom affiché</label>
+                          <YoboAlphaInput
+                            className="yobo-input mt-1.5 w-full font-bold"
+                            value={profileNameDraft}
+                            onValueChange={setProfileNameDraft}
+                            placeholder="Votre nom"
+                            keyboardMaxLength={80}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[var(--accent)] to-[var(--accent-container)] px-6 text-xs font-black text-[#4d2600] shadow-lg shadow-[var(--accent)]/10 transition hover:brightness-110 disabled:opacity-40"
+                          onClick={() => {
+                            setProfileNameError(null)
+                            setProfileNamePin('')
+                            setProfileNamePinModalOpen(true)
+                          }}
+                          disabled={profileUserLoading || !profileNameDraft.trim()}
+                        >
+                          <span className="material-symbols-outlined text-[18px]">done_all</span>
+                          Mettre à jour
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[var(--accent)] to-[var(--accent-container)] px-6 text-xs font-black text-[#4d2600] shadow-lg shadow-[var(--accent)]/10 transition hover:brightness-110 disabled:opacity-40"
-                        onClick={() => {
-                          setProfileNameError(null)
-                          setProfileNamePin('')
-                          setProfileNamePinModalOpen(true)
-                        }}
-                        disabled={profileUserLoading || !profileNameDraft.trim()}
-                      >
-                        <span className="material-symbols-outlined text-[18px]">done_all</span>
-                        Mettre à jour
-                      </button>
+
+                      {/* AVATAR PICKER SECTION */}
+                      <div className="border-t border-[var(--border)] border-dashed pt-6">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--muted)]">Choisir un avatar</label>
+                        <div className="mt-4">
+                          <YoboAvatarPicker />
+                        </div>
+                      </div>
                     </div>
                   ) : (
-                    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
-                      <span className="text-xs font-bold text-[var(--muted)]">Le changement de nom est réservé au gérant.</span>
+                    <div className="space-y-6">
+                      <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
+                        <span className="text-xs font-bold text-[var(--muted)]">Le changement de nom est réservé au gérant.</span>
+                      </div>
+                      
+                      <div className="border-t border-[var(--border)] border-dashed pt-6">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--muted)]">Choisir un avatar</label>
+                        <div className="mt-4">
+                          <YoboAvatarPicker />
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>

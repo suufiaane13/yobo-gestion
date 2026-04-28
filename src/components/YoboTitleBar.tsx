@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { YoboUpdater } from './YoboUpdater'
+import { YoboAvatarDisplay } from './YoboAvatarPicker'
 
 type YoboTitleBarProps = {
   /** Ex. « Gérant : Marie » / « Caissier : Ali » */
   badgeText: string
   badgeKind: 'gerant' | 'caissier'
+  avatar: string | null
   theme: 'light' | 'dark'
   /** Faux si le thème est piloté automatiquement (ex. heure) : le bouton reste visible mais inactif. */
   themeToggleEnabled?: boolean
@@ -191,6 +193,7 @@ function formatTitleBarClockParts(d: Date): { hm: string; sec: string; dateLine:
 export function YoboTitleBar({
   badgeText,
   badgeKind,
+  avatar,
   theme,
   themeToggleEnabled = true,
   authed,
@@ -274,11 +277,15 @@ export function YoboTitleBar({
                   ? 'yobo-titlebar__user-badge--gerant'
                   : 'yobo-titlebar__user-badge--caissier'
               }`}
-              title={`${badgeKind === 'gerant' ? 'Gérant' : 'Caissier'} : ${badgeText}`}
+               title={`${badgeKind === 'gerant' ? 'Gérant' : 'Caissier'} : ${badgeText}`}
             >
-              <span className="material-symbols-outlined yobo-titlebar__user-icon">
-                {badgeKind === 'gerant' ? 'shield_person' : 'person'}
-              </span>
+              {avatar ? (
+                <YoboAvatarDisplay id={avatar} size="xs" className="yobo-titlebar__user-icon !bg-transparent !shadow-none" />
+              ) : (
+                <span className="material-symbols-outlined yobo-titlebar__user-icon">
+                  {badgeKind === 'gerant' ? 'shield_person' : 'person'}
+                </span>
+              )}
               <span className="yobo-titlebar__user-name">
                 {badgeText}
               </span>

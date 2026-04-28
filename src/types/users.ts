@@ -6,6 +6,7 @@ export type CaissierDto = {
   role: string
   active: boolean
   theme: Theme
+  avatar?: string | null
   createdAt: string
 }
 
@@ -14,6 +15,7 @@ export type UserProfileDto = {
   name: string
   role: string
   active: boolean
+  avatar?: string | null
   createdAt: string
 }
 
@@ -30,6 +32,7 @@ export function caissierFromApiRow(row: unknown): CaissierDto {
     role: String(o.role ?? ''),
     active: Boolean(o.active),
     theme: o.theme === 'light' ? 'light' : 'dark',
+    avatar: typeof o.avatar === 'string' ? o.avatar : null,
     createdAt,
   }
 }

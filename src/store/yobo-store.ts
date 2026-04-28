@@ -144,6 +144,8 @@ export type YoboActions = {
   setProfileNamePin: (v: string) => void
   setProfileNameLoading: (v: boolean) => void
   setProfileNameError: (v: string | null) => void
+  updateAvatar: (avatar: string) => Promise<void>
+  setAvatar: (avatar: string | null) => void
   setCaissiers: (v: CaissierDto[]) => void
   setCaissiersError: (v: string | null) => void
   setCaissiersLoading: (v: boolean) => void
@@ -161,6 +163,7 @@ export type YoboActions = {
   setNewCaissierTheme: (v: Theme) => void
   setBusyToggleUserId: (v: number | null) => void
   setUserId: (v: number | null) => void
+  setUpdateSeen: (version: string | null, date: string | null) => void
   setTicketShopLabel: (v: string) => void
   setTicketShopPhone: (v: string) => void
   setTicketPrinterA: (v: string) => void
@@ -420,6 +423,24 @@ export const useYoboStore = create<YoboStore>()(
         setProfileNamePin: (v) => set({ profileNamePin: v }),
         setProfileNameLoading: (v) => set({ profileNameLoading: v }),
         setProfileNameError: (v) => set({ profileNameError: v }),
+        setAvatar: (v) => set({ avatar: v }),
+        updateAvatar: async (avatar: string) => {
+          const { role, userId, pushToast } = get()
+          if (userId === null) return
+          try {
+            await invoke('update_user_avatar', { role, userId, avatar })
+            set({ avatar })
+            if (get().profileUserProfile) {
+              set((s) => ({
+                profileUserProfile: s.profileUserProfile ? { ...s.profileUserProfile, avatar } : null,
+              }))
+            }
+            pushToast('success', 'Avatar mis à jour !')
+          } catch (e) {
+            logDevError('update_user_avatar', e)
+            pushToast('error', "Échec de la mise à jour de l'avatar.")
+          }
+        },
         setCaissiers: (v) => set({ caissiers: v }),
         setCaissiersError: (v) => set({ caissiersError: v }),
         setCaissiersLoading: (v) => set({ caissiersLoading: v }),
@@ -449,6 +470,7 @@ export const useYoboStore = create<YoboStore>()(
         setNewCaissierTheme: (v) => set({ newCaissierTheme: v }),
         setBusyToggleUserId: (v) => set({ busyToggleUserId: v }),
         setUserId: (v) => set({ userId: v }),
+        setUpdateSeen: (version, date) => set({ updateVersionSeen: version, updateFirstSeenAt: date }),
         setTicketShopLabel: (v) => set({ ticketShopLabel: v }),
         setTicketShopPhone: (v) => set({ ticketShopPhone: v }),
         setTicketPrinterA: (v) => set({ ticketPrinterA: v }),
@@ -793,6 +815,7 @@ export const useYoboStore = create<YoboStore>()(
             })
 
             get().setTheme(res.theme === 'light' ? 'light' : 'dark')
+            get().setAvatar(res.avatar ?? null)
             get().setUserId(res.userId)
             get().setTab(role === 'gerant' ? 'dashboard' : 'caisse')
             get().setAuthed(true)
@@ -1518,6 +1541,8 @@ export const useYoboStore = create<YoboStore>()(
           themePreference: state.themePreference,
           ticketPrinterA: state.ticketPrinterA,
           ticketPrinterB: state.ticketPrinterB,
+          updateFirstSeenAt: state.updateFirstSeenAt,
+          updateVersionSeen: state.updateVersionSeen,
         }),
         merge: (persisted, current) => {
           const p = persisted as Partial<YoboState> | undefined

@@ -26,6 +26,7 @@ export default function App() {
   const role = useYoboStore((s) => s.role)
   const identifier = useYoboStore((s) => s.identifier)
   const theme = useYoboStore((s) => s.theme)
+  const avatar = useYoboStore((s) => s.avatar)
   const themePreference = useYoboStore((s) => s.themePreference)
   const toggleTheme = useYoboStore((s) => s.toggleTheme)
   const requestLogout = useYoboStore((s) => s.requestLogout)
@@ -59,6 +60,7 @@ export default function App() {
         <YoboTitleBar
           badgeText={titleBarIdentifier}
           badgeKind={role === 'gerant' ? 'gerant' : 'caissier'}
+          avatar={avatar}
           theme={theme}
           themeToggleEnabled={themePreference === 'manual'}
           authed={authed}

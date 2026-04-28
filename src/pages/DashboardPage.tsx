@@ -198,12 +198,23 @@ export function DashboardPage() {
               >
                 <span className="material-symbols-outlined text-[24px]">{s.icon}</span>
               </span>
-              <div className="min-w-0">
-                <div className="text-[11px] font-black uppercase tracking-[0.15em] text-[var(--muted)]">
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[10px] font-black uppercase tracking-[0.12em] text-[var(--muted)]">
                   {s.label}
                 </div>
-                <div className="font-[var(--heading)] text-3xl font-black tabular-nums tracking-tighter text-[var(--text-h)]">
-                  {s.value}
+                <div className="font-[var(--heading)] text-2xl sm:text-3xl font-black tabular-nums tracking-tighter text-[var(--text-h)] truncate" title={s.value}>
+                  {(() => {
+                    if (typeof s.value === 'string' && s.value.includes(' MAD')) {
+                      const [num, currency] = s.value.split(' MAD')
+                      return (
+                        <>
+                          {num}
+                          <span className="ml-2 text-[10px] sm:text-xs font-medium text-[var(--muted)] tracking-normal">MAD</span>
+                        </>
+                      )
+                    }
+                    return s.value
+                  })()}
                 </div>
               </div>
             </div>
