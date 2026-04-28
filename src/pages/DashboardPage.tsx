@@ -205,7 +205,7 @@ export function DashboardPage() {
                 <div className="font-[var(--heading)] text-2xl sm:text-3xl font-black tabular-nums tracking-tighter text-[var(--text-h)] truncate" title={s.value}>
                   {(() => {
                     if (typeof s.value === 'string' && s.value.includes(' MAD')) {
-                      const [num, currency] = s.value.split(' MAD')
+                      const [num] = s.value.split(' MAD')
                       return (
                         <>
                           {num}

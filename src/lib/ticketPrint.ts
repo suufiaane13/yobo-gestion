@@ -187,17 +187,13 @@ function prepareClientTicket(input: ClientTicketInput): EscPosBuilder {
   return b
 }
 
-
-
-
 /** Génère un EscPosBuilder prêt pour l'impression Cuisine (Alignement Client Pro) */
 function prepareKitchenTicket(input: ClientTicketInput): EscPosBuilder {
   const b = new EscPosBuilder()
-  const d = new Date()
-  const timeStr = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  const now = new Date()
   const shopLabel = (input.shopLabel || 'YOBO').toUpperCase()
 
-  // 1. Header Premium (Logo ou Texte)
+  // 1. Header & Logo (Clone du Client)
   const logo = useYoboStore.getState().ticketLogo
   b.align(1)
   if (logo) {
@@ -205,9 +201,14 @@ function prepareKitchenTicket(input: ClientTicketInput): EscPosBuilder {
   } else {
     b.boxLine(shopLabel, PRINTER_WIDTH)
   }
-  // Numéro de commande (Style Compact)
-  b.bold(true).row(`#${input.orderId}`, timeStr, PRINTER_WIDTH).bold(false)
-  b.invert(true).text(` ${orderTypeLabel(input.orderType)} `).line('').invert(false)
+  if (input.shopPhone) b.line(input.shopPhone)
+
+  // 2. Order Info (Identique au Ticket Client)
+  const shortDate = now.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
+  const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  b.bold(true).row(`#${input.orderId}`, `${shortDate} ${timeStr}`, PRINTER_WIDTH).bold(false)
+  b.align(1).invert(true).text(` ${orderTypeLabel(input.orderType)} `).line('').invert(false)
+  b.size(1, 1).bold(true).line('*** CUISINE ***').size(0, 0).bold(false)
   b.dashedLine()
 
   if (input.customerPhone || input.customerAddress) {
@@ -261,10 +262,6 @@ function prepareKitchenTicket(input: ClientTicketInput): EscPosBuilder {
   return b
 }
 
-
-
-
-
 /** Génère un EscPosBuilder prêt pour l'impression Clôture */
 function prepareCashCloseTicket(input: CashCloseTicketInput): EscPosBuilder {
   const b = new EscPosBuilder()
@@ -292,15 +289,14 @@ function prepareCashCloseTicket(input: CashCloseTicketInput): EscPosBuilder {
   b.row('  FOND OUVERTURE', `${input.openingAmount.toFixed(2)} MAD`, PRINTER_WIDTH)
   b.row('  TOTAL VENTES', `${input.salesTotal.toFixed(2)} MAD`, PRINTER_WIDTH)
   b.row('  NB COMMANDES', String(input.ordersCount), PRINTER_WIDTH)
-  b.dashedLine(true)
+  b.align(1).solidLine(true).align(0)
 
   // 4. Bilan
   b.bold(true)
   b.row('  TOTAL THÉORIQUE', `${input.theoretical.toFixed(2)} MAD`, PRINTER_WIDTH)
   b.row('  TOTAL RÉEL (ESPÈCES)', `${input.closingAmount.toFixed(2)} MAD`, PRINTER_WIDTH)
   b.bold(false)
-
-  b.solidLine(true)
+  b.align(1).solidLine(true).align(0)
   // 5. Écart (Alerte visuelle)
   if (Math.abs(input.gap) > 0.01) {
     b.align(1).invert(true).text(` ÉCART : ${input.gap.toFixed(2)} MAD `).line('').invert(false)
@@ -312,34 +308,40 @@ function prepareCashCloseTicket(input: CashCloseTicketInput): EscPosBuilder {
   return b
 }
 
-
-
-
 /** Génère un EscPosBuilder premium pour le ticket QR */
 function prepareQrTicket(input: any): EscPosBuilder {
   const b = new EscPosBuilder()
   const shopLabel = (input.shopLabel || 'YOBO').toUpperCase()
 
-  // 1. Header Boxed
+  // 1. Logo (si présent)
+  const logo = useYoboStore.getState().ticketLogo
   b.align(1)
-  b.boxLine(shopLabel, PRINTER_WIDTH)
-  // 2. Label Inversé
-  b.invert(true).text(` ${input.label.toUpperCase()} `).line('').invert(false)
+  if (logo) {
+    b.printBitmap(logo.data, logo.width, logo.height).feed(1)
+  }
 
-  // 3. QR Code
-  b.printQrCode(input.value, 7)
+  // 2. Nom de la boutique (Toujours présent pour le branding)
+  b.bold(true).line(shopLabel).bold(false)
+  b.dashedLine(true)
+
+  // 3. Type de QR en GROS (Instagram, WhatsApp, etc.)
+  b.feed(1)
+  b.size(1, 1).bold(true).line(input.label.toUpperCase()).size(0, 0).bold(false)
+  b.line('SCANNEZ POUR NOUS REJOINDRE')
   b.feed(1)
 
-  // 4. Footer aligné
-  b.dashedLine(true)
-  b.align(1).bold(true).line(' SCANNEZ POUR NOUS SUIVRE ').bold(false)
-  b.dashedLine(true)
+  // 4. QR Code (Taille 6 pour plus de stabilité)
+  b.align(1)
+  b.printQrCode(input.value, 6)
+  b.feed(2)
+
+  // 5. Footer
+  b.solidLine(true)
+  b.align(1).bold(true).line(' MERCI DE VOTRE FIDÉLITÉ ').bold(false)
+  b.solidLine(true)
 
   return b
 }
-
-
-
 
 // ================= PUBLIC EXPORTS =================
 

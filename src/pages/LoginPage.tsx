@@ -21,13 +21,11 @@ export function LoginPage() {
   const [appVersion, setAppVersion] = useState('')
 
   useEffect(() => {
-    if (!isTauriRuntime()) return
-    let cancelled = false
-    void getVersion().then((v) => {
-      if (!cancelled) setAppVersion(v)
-    })
-    return () => {
-      cancelled = true
+    // On essaie de récupérer la version, sinon on peut mettre une valeur de secours pour le dev
+    if (isTauriRuntime()) {
+      void getVersion().then(setAppVersion)
+    } else {
+      setAppVersion('2.5.0-dev') // Version de secours pour le navigateur
     }
   }, [])
 

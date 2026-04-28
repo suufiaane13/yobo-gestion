@@ -22,7 +22,7 @@ export function YoboUpdater() {
       const update = await check()
       if (update?.available) {
         if (isAuto) {
-          pushToast('info', 'Mise à jour obligatoire en cours...')
+          pushToast('success', 'Mise à jour obligatoire en cours...')
         }
         
         let downloaded = 0
