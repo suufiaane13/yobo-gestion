@@ -1,6 +1,6 @@
 {
   "productName": "yobo-gestion",
-  "version": "2.6.2",
+  "version": "2.6.3",
   "identifier": "com.yobo.gestion",
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "build": {
