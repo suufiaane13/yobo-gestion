@@ -1,11 +1,1 @@
-{
-  "version": "2.6.5",
-  "notes": "Nouvelle version de YOBO disponible pour téléchargement et mise à jour automatique.",
-  "pub_date": "2026-04-28T03:50:00.000Z",
-  "platforms": {
-    "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUNnFzS1ozWGhIQ3pOcER0a0gwVWdRV0ZxcUdwWmpvQmpsaXVkd2FSdnJKdlYzRkZnenMvbFE5dnRjZkZOelV5REJ6c3lBUWxUWkdpRWE1ZGJXU1ZFME9yU1plSSthQ3drPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3MzQ3MDYzCWZpbGU6eW9iby1nZXN0aW9uXzIuNi41X3g2NC1zZXR1cC5leGUKTWZYenBDS1hReVQ1c2xZc3Z3a3lzUnBwU205V0lCZzFnaVppWjZtMlZvd3h3ZVZKWE5zcjJoTytiT01jekozV0k4ZXhGSVFJdDhtR2JPYmhWSlJSQ0E9PQo=",
-      "url": "https://github.com/suufiaane13/yobo-gestion/releases/download/v2.6.5/yobo-gestion_2.6.5_x64-setup.exe"
-    }
-  }
-}
+{\n  "version": "2.6.5",\n  "notes": "Nouvelle version de YOBO disponible pour téléchargement et mise à jour automatique.",\n  "pub_date": "2026-04-28T03:50:00.000Z",\n  "platforms": {\n    "windows-x86_64": {\n      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUNnFzS1ozWGhIQ3pOcER0a0gwVWdRV0ZxcUdwWmpvQmpsaXVkd2FSdnJKdlYzRkZnenMvbFE5dnRjZkZOelV5REJ6c3lBUWxUWkdpRWE1ZGJXU1ZFME9yU1plSSthQ3drPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3MzQ3MDYzCWZpbGU6eW9iby1nZXN0aW9uXzIuNi41X3g2NC1zZXR1cC5leGUKTWZYenBDS1hReVQ1c2xZc3Z3a3lzUnBwU205V0lCZzFnaVppWjZtMlZvd3h3ZVZKWE5zcjJoTytiT01jekozV0k4ZXhGSVFJdDhtR2JPYmhWSlJSQ0E9PQo=",\n      "url": "https://github.com/suufiaane13/yobo-gestion/releases/download/v2.6.5/yobo-gestion_2.6.5_x64-setup.exe"\n    }\n  }\n}\n

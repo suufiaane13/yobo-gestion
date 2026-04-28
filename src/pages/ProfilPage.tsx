@@ -338,8 +338,8 @@ export function ProfilPage() {
               <section className="overflow-hidden rounded-2xl bg-[var(--card)] shadow-[0_16px_48px_-24px_rgba(0,0,0,0.5)] ring-1 ring-[var(--border)]">
                 <div className="border-b border-[var(--border)] px-6 py-4">
                   <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-wider text-[var(--text-h)]">
-                    <span className="material-symbols-outlined text-[18px] text-[var(--accent)]">palette</span>
-                    Apparence & Interface
+                    <span className="material-symbols-outlined text-[18px] text-[var(--accent)]">auto_awesome</span>
+                    Design & Performance
                   </h3>
                 </div>
                 <div className="p-6">
@@ -368,6 +368,27 @@ export function ProfilPage() {
                         </button>
                       </div>
                     )}
+                  </div>
+
+                  <div className="mt-8 flex flex-wrap items-center gap-3">
+                    <a 
+                      href="https://github.com/suufiaane13" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="group flex items-center gap-2 rounded-lg bg-[var(--surface)] px-3 py-1.5 ring-1 ring-[var(--border)] transition-all hover:ring-[var(--accent)]/40 hover:bg-[var(--accent)]/5"
+                    >
+                      <span className="material-symbols-outlined text-[16px] text-[var(--muted)] group-hover:text-[var(--text-h)]">code</span>
+                      <span className="text-[10px] font-black tracking-widest uppercase text-[var(--muted)] group-hover:text-[var(--text-h)]">suufiaane13</span>
+                    </a>
+                    <a 
+                      href="https://instagram.com/suuf.iaane" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="group flex items-center gap-2 rounded-lg bg-[var(--surface)] px-3 py-1.5 ring-1 ring-[var(--border)] transition-all hover:ring-[#E1306C]/40 hover:bg-[#E1306C]/5"
+                    >
+                      <span className="material-symbols-outlined text-[16px] text-[var(--muted)] group-hover:text-[#E1306C]">camera_alt</span>
+                      <span className="text-[10px] font-black tracking-widest uppercase text-[var(--muted)] group-hover:text-[var(--text-h)]">suuf.iaane</span>
+                    </a>
                   </div>
                 </div>
               </section>
