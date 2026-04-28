@@ -1,6 +1,6 @@
 {
   "productName": "yobo-gestion",
-  "version": "2.6.5",
+  "version": "2.6.6",
   "identifier": "com.yobo.gestion",
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "build": {
@@ -68,7 +68,7 @@
       "endpoints": [
         "https://raw.githubusercontent.com/suufiaane13/yobo-gestion/main/updater/{{target}}-{{arch}}.json"
       ],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEI0Nzc4REQ5OUMyQUFGQQpSV1Q2cXNLWjNYaEhDemtOTWVvakFIQVFqdEJqNXdmSnF6bjZ3Z1FyVE5HV2U0aGgvT3BvL1gvSAo="
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDEwMUUyN0ZEQTk1M0U2QjUKUldTMTVsT3AvU2NlRUNDNy9wT1QzQnYrYVh3bzNNa05FSzFLWWFKTUhDU2ZkUVBqaTcrdkpIek8K"
     }
   }
 }
