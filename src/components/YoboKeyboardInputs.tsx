@@ -118,9 +118,8 @@ export const YoboAlphaTextarea = forwardRef<HTMLTextAreaElement, YoboAlphaTextar
       inputMode="none"
       onFocus={vk.onFocus}
       onPointerDown={(e) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        onPointerDown?.(e as any)
-        vk.onPointerDown(e as any)
+        onPointerDown?.(e)
+        vk.onPointerDown(e as unknown as React.PointerEvent<HTMLInputElement>)
       }}
       onPointerUp={vk.onPointerUp}
     />

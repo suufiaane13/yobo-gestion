@@ -309,7 +309,7 @@ function prepareCashCloseTicket(input: CashCloseTicketInput): EscPosBuilder {
 }
 
 /** Génère un EscPosBuilder premium pour le ticket QR */
-function prepareQrTicket(input: any): EscPosBuilder {
+function prepareQrTicket(input: { shopLabel?: string; label: string; value: string }): EscPosBuilder {
   const b = new EscPosBuilder()
   const shopLabel = (input.shopLabel || 'YOBO').toUpperCase()
 
@@ -345,7 +345,7 @@ function prepareQrTicket(input: any): EscPosBuilder {
 
 // ================= PUBLIC EXPORTS =================
 
-export async function printQrTicket(input: any): Promise<void> {
+export async function printQrTicket(input: { printer?: string; label: string; value: string; shopLabel?: string }): Promise<void> {
   const userId = useYoboStore.getState().userId || 0
   const printer = input.printer || useYoboStore.getState().ticketPrinterA
   if (!printer) return
@@ -359,11 +359,11 @@ export async function printQrTicket(input: any): Promise<void> {
 }
 
 /** Génère le texte brut pour l'aperçu QR */
-export function buildQrTicketText(input: any): string {
+export function buildQrTicketText(input: { shopLabel?: string; label: string; value: string }): string {
   return prepareQrTicket(input).toText()
 }
 
-export async function printOrderTicket(input: any): Promise<void> {
+export async function printOrderTicket(input: ClientTicketInput & { printerA?: string; printerB?: string }): Promise<void> {
   const userId = useYoboStore.getState().userId || 0
 
   // 1. Impression Client (Imprimante A)
@@ -449,7 +449,7 @@ export async function printCashCloseTicket(input: CashCloseTicketInput): Promise
 }
 
 /** Génère le texte brut pour l'aperçu simultané Client + Cuisine */
-export function buildOrderTicketPreviewText(input: any): string {
+export function buildOrderTicketPreviewText(input: ClientTicketInput): string {
   const clientT = prepareClientTicket(input).toText()
   const kitchenT = prepareKitchenTicket(input).toText()
 

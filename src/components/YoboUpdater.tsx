@@ -16,10 +16,12 @@ export function YoboUpdater() {
   const updateVersionSeen = useYoboStore((s) => s.updateVersionSeen)
   const setUpdateSeen = useYoboStore((s) => s.setUpdateSeen)
 
+  const UPDATE_URL = 'https://raw.githubusercontent.com/suufiaane13/yobo-gestion/main/updater/windows-x86_64.json'
+
   const handleUpdate = useCallback(async (isAuto = false) => {
     setUpdating(true)
     try {
-      const update = await check()
+      const update = await check({ endpoints: [`${UPDATE_URL}?t=${Date.now()}`] })
       if (update?.available) {
         if (isAuto) {
           pushToast('success', 'Mise à jour obligatoire en cours...')
@@ -52,12 +54,12 @@ export function YoboUpdater() {
       setUpdating(false)
       setProgress(null)
     }
-  }, [invoke, pushToast, setUpdateSeen])
+  }, [pushToast, setUpdateSeen])
 
   const handleCheck = useCallback(async (silent = false) => {
     setChecking(true)
     try {
-      const update = await check()
+      const update = await check({ endpoints: [`${UPDATE_URL}?t=${Date.now()}`] })
       if (update?.available) {
         setUpdateInfo({ version: update.version, body: update.body })
         

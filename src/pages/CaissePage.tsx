@@ -219,7 +219,7 @@ export function CaissePage() {
       setSelectedProdId(null)
     } else {
       // Sécurité : Vérifier que l'élément sélectionné existe toujours dans la catégorie actuelle
-      const startIndex = currentItems.findIndex(it => (it as any).id === selectedProdId)
+      const startIndex = currentItems.findIndex(it => 'id' in it && it.id === selectedProdId)
       if (startIndex !== -1) {
         reorderProducts(menuCatKey, startIndex, index)
         useYoboStore.getState().pushToast('success', 'Produit déplacé')
@@ -531,7 +531,7 @@ export function CaissePage() {
           {displayMode === 'grid' ? (
             <div className="grid grid-cols-3 gap-3 overflow-y-auto pr-2 min-h-0">
               {currentItems.map((item, i) => {
-                const prodId = (item as any).id as number | undefined
+                const prodId = 'id' in item ? (item as { id: number }).id : undefined
                 const isSelectedToMove = isReorderMode && selectedProdId !== null && selectedProdId === prodId
                 const isOtherSelected = isReorderMode && selectedProdId !== null && selectedProdId !== prodId
                 const isBlockedByCategory = isReorderMode && selectedCatId !== null
@@ -577,7 +577,7 @@ export function CaissePage() {
               {currentItems.map((item, i) => {
                 const prices = Object.values(item.sizes)
                 const minPrice = prices.length > 0 ? Math.min(...prices) : 0
-                const itemId = hasCatalog && 'id' in item ? (item as any).id : undefined
+                const itemId = hasCatalog && 'id' in item ? (item as { id: number }).id : undefined
                 const dndId = itemId !== undefined ? `prod-${itemId}` : `prod-list-${item.name}-${i}`
 
                 const isSelectedToMove = isReorderMode && selectedProdId !== null && selectedProdId === itemId

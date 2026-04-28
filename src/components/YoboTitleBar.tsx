@@ -145,9 +145,9 @@ function IconClose() {
   return (
     <TitlebarGlyph>
       <path
-        d="M6 6l12 12M18 6L6 18"
+        d="M18 6L6 18M6 6l12 12"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />

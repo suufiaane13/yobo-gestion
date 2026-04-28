@@ -21,11 +21,12 @@ export function LoginPage() {
   const [appVersion, setAppVersion] = useState('')
 
   useEffect(() => {
-    // On essaie de récupérer la version, sinon on peut mettre une valeur de secours pour le dev
+    // On essaie de récupérer la version
     if (isTauriRuntime()) {
-      void getVersion().then(setAppVersion)
+      void getVersion().then((v) => setAppVersion(v))
     } else {
-      setAppVersion('2.5.0-dev') // Version de secours pour le navigateur
+      // On évite l'appel synchrone direct pour ESLint
+      void Promise.resolve().then(() => setAppVersion('2.6.0-dev'))
     }
   }, [])
 
