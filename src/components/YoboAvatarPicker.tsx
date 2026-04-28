@@ -86,7 +86,7 @@ export function YoboAvatarPicker() {
   )
 }
 
-export function YoboAvatarDisplay({ id, size = 'md' }: { id?: string | null; size?: 'sm' | 'md' | 'lg' }) {
+export function YoboAvatarDisplay({ id, size = 'md', className = '' }: { id?: string | null; size?: 'sm' | 'md' | 'lg'; className?: string }) {
   const avatar = AVATARS.find((a) => a.id === id) || AVATARS[0]
   
   const sizeClasses = {
@@ -103,7 +103,7 @@ export function YoboAvatarDisplay({ id, size = 'md' }: { id?: string | null; siz
 
   return (
     <div
-      className={`flex shrink-0 items-center justify-center bg-gradient-to-br shadow-md transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer ${sizeClasses[size]} ${avatar.color} ${avatar.glow}`}
+      className={`flex shrink-0 items-center justify-center bg-gradient-to-br shadow-md transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer ${sizeClasses[size]} ${avatar.color} ${avatar.glow} ${className}`}
     >
       <span className={`material-symbols-outlined text-white drop-shadow-sm ${iconSizes[size]}`}>
         {avatar.icon}

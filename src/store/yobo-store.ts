@@ -1517,7 +1517,6 @@ export const useYoboStore = create<YoboStore>()(
           try {
             // Calcul des nouvelles positions pour tous les items de la catégorie
             const positions = next.map((item, index) => {
-              // @ts-expect-error: id is present on items from catalog
               return { id: item.id as number, position: index }
             }).filter(p => p.id !== undefined)
 

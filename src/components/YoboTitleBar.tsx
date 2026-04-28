@@ -280,7 +280,7 @@ export function YoboTitleBar({
                title={`${badgeKind === 'gerant' ? 'Gérant' : 'Caissier'} : ${badgeText}`}
             >
               {avatar ? (
-                <YoboAvatarDisplay id={avatar} size="xs" className="yobo-titlebar__user-icon !bg-transparent !shadow-none" />
+                <YoboAvatarDisplay id={avatar} size="sm" className="yobo-titlebar__user-icon !bg-transparent !shadow-none" />
               ) : (
                 <span className="material-symbols-outlined yobo-titlebar__user-icon">
                   {badgeKind === 'gerant' ? 'shield_person' : 'person'}

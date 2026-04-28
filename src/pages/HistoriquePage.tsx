@@ -983,7 +983,6 @@ export function HistoriquePage() {
                                     orderId: dto.id,
                                     timeIso: dto.time,
                                     cashier: dto.cashier,
-                                    cashSessionId: dto.cashSessionId ?? undefined,
                                     orderType: orderTypeForThermal(dto.orderType ?? undefined),
                                     comment: dto.orderComment ?? null,
                                     customerPhone: dto.customerPhone ?? null,

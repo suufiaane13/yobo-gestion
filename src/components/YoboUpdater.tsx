@@ -21,7 +21,7 @@ export function YoboUpdater() {
   const handleUpdate = useCallback(async (isAuto = false) => {
     setUpdating(true)
     try {
-      const update = await check({ endpoints: [`${UPDATE_URL}?t=${Date.now()}`] })
+      const update = await check()
       if (update?.available) {
         if (isAuto) {
           pushToast('success', 'Mise à jour obligatoire en cours...')
@@ -59,7 +59,7 @@ export function YoboUpdater() {
   const handleCheck = useCallback(async (silent = false) => {
     setChecking(true)
     try {
-      const update = await check({ endpoints: [`${UPDATE_URL}?t=${Date.now()}`] })
+      const update = await check()
       if (update?.available) {
         setUpdateInfo({ version: update.version, body: update.body })
         

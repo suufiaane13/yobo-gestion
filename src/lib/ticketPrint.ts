@@ -38,6 +38,7 @@ export interface ClientTicketInput extends TicketShopBranding {
   changeAmount?: number | null
   customerPhone?: string | null
   customerAddress?: string | null
+  comment?: string | null
 }
 
 export interface CashCloseTicketInput extends TicketShopBranding {

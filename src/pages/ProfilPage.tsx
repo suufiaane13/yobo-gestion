@@ -141,7 +141,7 @@ export function ProfilPage() {
             <div className="border-b border-[var(--border)] bg-[var(--surface)] p-6 text-center">
               <div className="mx-auto mb-3 flex items-center justify-center">
                 {profileUserProfile?.avatar ? (
-                  <YoboAvatarDisplay id={profileUserProfile.avatar} size="xl" className="ring-4 ring-[var(--card)]" />
+                  <YoboAvatarDisplay id={profileUserProfile.avatar} size="lg" className="ring-4 ring-[var(--card)]" />
                 ) : (
                   <div className="flex size-20 items-center justify-center rounded-2xl bg-gradient-to-tr from-[var(--accent)] to-[var(--accent-container)] text-2xl font-black text-white shadow-lg ring-4 ring-[var(--card)] transition-all duration-300 hover:scale-110 hover:rotate-3 active:scale-90 cursor-pointer">
                     {profileUserProfile ? firstLetterUpper(profileUserProfile.name) : <span className="material-symbols-outlined text-3xl">person</span>}
