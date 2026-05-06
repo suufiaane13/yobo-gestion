@@ -7,8 +7,18 @@ const KEY_LABEL: &str = "ticket_shop_label";
 const KEY_PHONE: &str = "ticket_shop_phone";
 const KEY_DOUBLE_PRINT: &str = "ticket_double_print";
 const KEY_GRATINE_PRICE: &str = "gratine_price";
+const KEY_CASH_RENDU_ENABLED: &str = "cash_rendu_enabled";
+const KEY_VIRTUAL_KEYBOARD_ENABLED: &str = "virtual_keyboard_enabled";
 const DEFAULT_LABEL: &str = "YOBO SNACK";
 const DEFAULT_GRATINE_PRICE: &str = "5";
+
+fn default_cash_rendu_enabled() -> bool {
+  true
+}
+
+fn default_virtual_keyboard_enabled() -> bool {
+  true
+}
 
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -18,6 +28,10 @@ pub struct TicketPublicSettings {
   /// Deux boîtes d’impression successives (2ᵉ imprimante ou 2ᵉ copie).
   pub double_print: bool,
   pub gratine_price: f64,
+  /// Modal caisse : montant reçu / rendu à donner avant validation.
+  pub cash_rendu_enabled: bool,
+  /// Clavier tactile plein écran (AZERTY / pavés numériques).
+  pub virtual_keyboard_enabled: bool,
 }
 
 fn meta_get(conn: &rusqlite::Connection, key: &str) -> Option<String> {
@@ -52,12 +66,20 @@ pub fn get_ticket_public_settings() -> Result<TicketPublicSettings, String> {
   let gratine_price = meta_get(&conn, KEY_GRATINE_PRICE)
     .and_then(|s| s.parse::<f64>().ok())
     .unwrap_or_else(|| DEFAULT_GRATINE_PRICE.parse::<f64>().unwrap());
+  let cash_rendu_enabled = meta_get(&conn, KEY_CASH_RENDU_ENABLED)
+    .map(|s| matches!(s.trim(), "1" | "true" | "yes"))
+    .unwrap_or(true);
+  let virtual_keyboard_enabled = meta_get(&conn, KEY_VIRTUAL_KEYBOARD_ENABLED)
+    .map(|s| matches!(s.trim(), "1" | "true" | "yes"))
+    .unwrap_or(true);
 
   Ok(TicketPublicSettings {
     shop_label,
     shop_phone,
     double_print,
     gratine_price,
+    cash_rendu_enabled,
+    virtual_keyboard_enabled,
   })
 }
 
@@ -69,6 +91,10 @@ pub struct TicketShopBody {
   #[serde(default)]
   pub double_print: bool,
   pub gratine_price: f64,
+  #[serde(default = "default_cash_rendu_enabled")]
+  pub cash_rendu_enabled: bool,
+  #[serde(default = "default_virtual_keyboard_enabled")]
+  pub virtual_keyboard_enabled: bool,
 }
 
 #[tauri::command]
@@ -94,13 +120,23 @@ pub fn set_ticket_shop_settings(user_id: i64, body: TicketShopBody) -> Result<()
     if body.double_print { "1" } else { "0" },
   )?;
   meta_upsert(&conn, KEY_GRATINE_PRICE, &body.gratine_price.to_string())?;
+  meta_upsert(
+    &conn,
+    KEY_CASH_RENDU_ENABLED,
+    if body.cash_rendu_enabled { "1" } else { "0" },
+  )?;
+  meta_upsert(
+    &conn,
+    KEY_VIRTUAL_KEYBOARD_ENABLED,
+    if body.virtual_keyboard_enabled { "1" } else { "0" },
+  )?;
 
   db::append_log_best_effort(
     &conn,
     Some(user_id),
     "settings",
     "ticket_shop",
-    Some("En-tête / téléphone / double impression tickets"),
+    Some("En-tête / téléphone / double impression / rendu espèces / clavier tactile"),
     None,
   );
 

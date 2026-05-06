@@ -1,9 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useShallow } from 'zustand/shallow'
 import { MENU_ITEMS } from '../data/menuFallback'
 import { formatDateHeureFr } from '../lib/formatDateHeureFr'
 import { parseMadAmountRaw } from '../lib/parseMad'
-import { getSingleVariantEntry, isBlankSizeKey, sortSizePairsForDisplay } from '../lib/productSizes'
+import {
+  formatSizeLabelForDisplay,
+  getSingleVariantEntry,
+  isBlankSizeKey,
+  sortSizePairsForDisplay,
+} from '../lib/productSizes'
 import { canRequestOrderCancel, orderStatusLabelFr } from '../lib/orderStatus'
 import { capitalizeFirstLetter } from '../lib/yoboStrings'
 import { getCurrentWindow } from '@tauri-apps/api/window'
@@ -29,7 +34,6 @@ export function YoboAppModals() {
     setSelectedSize,
     posModalQty,
     setPosModalQty,
-    posModalLineNote,
     setPosModalLineNote,
     addToCart,
     cart,
@@ -76,12 +80,15 @@ export function YoboAppModals() {
     orderCancelModalOpen,
     orderCancelReason,
     orderCancelLoading,
+    orderCancelAuthPin = '',
+    orderCancelAuthError = null,
     setOrderCancelModalOpen,
     setOrderCancelReason,
+    setOrderCancelAuthPin,
     submitOrderCancel,
     logoutConfirmOpen,
     setLogoutConfirmOpen,
-    logout,
+    startLogoutTransition,
     discountModalOpen,
     setDiscountModalOpen,
     discountAuthModalOpen,
@@ -92,7 +99,6 @@ export function YoboAppModals() {
     discountAuthError,
     submitDiscountAuth,
     applyDiscount,
-    posModalHasGratine,
     setPosModalHasGratine,
     posModalGratines,
     setPosModalGratineAtIndex,
@@ -120,7 +126,6 @@ export function YoboAppModals() {
       setSelectedSize: s.setSelectedSize,
       posModalQty: s.posModalQty,
       setPosModalQty: s.setPosModalQty,
-      posModalLineNote: s.posModalLineNote,
       setPosModalLineNote: s.setPosModalLineNote,
       addToCart: s.addToCart,
       cart: s.cart,
@@ -167,12 +172,15 @@ export function YoboAppModals() {
       orderCancelModalOpen: s.orderCancelModalOpen,
       orderCancelReason: s.orderCancelReason,
       orderCancelLoading: s.orderCancelLoading,
+      orderCancelAuthPin: s.orderCancelAuthPin,
+      orderCancelAuthError: s.orderCancelAuthError,
       setOrderCancelModalOpen: s.setOrderCancelModalOpen,
       setOrderCancelReason: s.setOrderCancelReason,
+      setOrderCancelAuthPin: s.setOrderCancelAuthPin,
       submitOrderCancel: s.submitOrderCancel,
       logoutConfirmOpen: s.logoutConfirmOpen,
       setLogoutConfirmOpen: s.setLogoutConfirmOpen,
-      logout: s.logout,
+      startLogoutTransition: s.startLogoutTransition,
       discountModalOpen: s.discountModalOpen,
       setDiscountModalOpen: s.setDiscountModalOpen,
       discountAuthModalOpen: s.discountAuthModalOpen,
@@ -183,7 +191,6 @@ export function YoboAppModals() {
       discountAuthError: s.discountAuthError,
       submitDiscountAuth: s.submitDiscountAuth,
       applyDiscount: s.applyDiscount,
-      posModalHasGratine: s.posModalHasGratine,
       setPosModalHasGratine: s.setPosModalHasGratine,
       posModalGratines: s.posModalGratines,
       setPosModalGratineAtIndex: s.setPosModalGratineAtIndex,
@@ -243,6 +250,10 @@ export function YoboAppModals() {
   
   const [activePosTab, setActivePosTab] = useState(0)
 
+  useEffect(() => {
+    setActivePosTab((t) => (t >= posModalQty ? 0 : t))
+  }, [posModalQty])
+
   return (
     <>
       <YoboModal
@@ -296,9 +307,9 @@ export function YoboAppModals() {
         }
       >
         {currentSelectedItem ? (
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_1.4fr] gap-8">
+          <div className="grid min-w-0 grid-cols-1 gap-8 md:grid-cols-[1fr_1.4fr]">
             {/* Left Column: Size & Qty */}
-            <div className="space-y-6">
+            <div className="min-w-0 space-y-6">
               <div>
                 <div className="yobo-modal-label mb-3">Taille / Variante</div>
                 {posModalSingleVariant ? (
@@ -312,7 +323,7 @@ export function YoboAppModals() {
                         aria-current="true"
                       >
                         <div className="text-sm font-bold text-[var(--accent)]">
-                          {isBlankSizeKey(sz) ? 'Prix unique' : sz}
+                          {isBlankSizeKey(sz) ? 'Prix unique' : formatSizeLabelForDisplay(sz)}
                         </div>
                         <div className="text-xs text-[var(--muted)]">{`${price} MAD`}</div>
                       </div>
@@ -321,19 +332,22 @@ export function YoboAppModals() {
                 ) : (
                   (() => {
                     const sizePairs = sortSizePairsForDisplay(Object.entries(currentSelectedItem.sizes))
+                    const n = sizePairs.length
+                    /** Dernière carte seule sur la ligne (nombre de tailles impair) → centrée comme une carte du dessus. */
+                    const lastCentered = n % 2 === 1
                     return (
                       <div className="grid grid-cols-2 gap-2">
-                        {sizePairs.map(([size, price]) => (
+                        {sizePairs.map(([size, price], idx) => (
                           <button
                             key={size === '' ? '__yobo-single' : size}
                             type="button"
                             className={`yobo-size-chip ${
                               selectedSize === size ? 'yobo-size-chip--active' : ''
-                            }`}
+                            } ${lastCentered && idx === n - 1 ? 'col-span-2 justify-self-center w-[calc(50%-0.25rem)]' : ''}`}
                             onClick={() => setSelectedSize(size)}
                           >
                             <div className="text-sm font-bold text-[var(--accent)]">
-                              {isBlankSizeKey(size) ? 'Prix unique' : size}
+                              {isBlankSizeKey(size) ? 'Prix unique' : formatSizeLabelForDisplay(size)}
                             </div>
                             <div className="text-xs text-[var(--muted)]">{`${price} MAD`}</div>
                           </button>
@@ -388,110 +402,74 @@ export function YoboAppModals() {
             </div>
 
             {/* Right Column: Config & Notes */}
-            <div>
+            <div className="min-w-0">
               <div className="yobo-modal-label mb-3">Configuration & Notes</div>
-              
-              {posModalQty > 1 ? (
-                <div className="flex flex-col h-full min-h-0">
-                  {/* Tab Bar */}
-                  <div className="hide-scrollbar mb-4 flex gap-2 overflow-x-auto pb-1">
-                    {Array.from({ length: posModalQty }).map((_, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => setActivePosTab(idx)}
-                        className={`inline-flex min-w-[3rem] flex-col items-center justify-center rounded-xl px-3 py-1.5 transition-all ${
-                          activePosTab === idx
-                            ? 'bg-[var(--accent)] text-[#4d2600] shadow-md ring-2 ring-[var(--accent)]'
-                            : 'bg-[var(--card)] text-[var(--muted)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent)]'
-                        }`}
-                      >
-                        <span className="text-[9px] font-black uppercase opacity-60">Plat</span>
-                        <span className="text-sm font-black">{idx + 1}</span>
-                      </button>
-                    ))}
-                  </div>
 
-                  {/* Active Tab Content */}
-                  <div className="animate-in fade-in slide-in-from-right-2 duration-200">
-                    {(() => {
-                      const idx = activePosTab < posModalQty ? activePosTab : 0
-                      const isTacos = menuCat === 'tacos' || menuCatKey === 'tacos'
-                      const isG = posModalGratines[idx]
-                      const note = posModalNotes[idx]
-                      
-                      return (
-                        <div key={idx} className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm ring-1 ring-black/5">
-                          <div className="space-y-4">
-                            {isTacos && (
-                              <button
-                                type="button"
-                                onClick={() => setPosModalGratineAtIndex(idx, !isG)}
-                                className={`yobo-size-chip w-full ${isG ? 'yobo-size-chip--active' : ''}`}
-                              >
-                                <div className="text-sm font-bold text-[var(--accent)]">
-                                  Gratiné
-                                </div>
-                                <div className="text-xs text-[var(--muted)]">+{gratinePrice} MAD</div>
-                              </button>
-                            )}
-                            
-                            <div className="space-y-2">
-                              <div className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--muted)] ml-1">Note pour l'article #{idx + 1}</div>
-                              <div className="relative">
-                                <span className="material-symbols-outlined absolute left-3 top-3.5 text-[20px] text-[var(--muted)]">
-                                  edit_note
-                                </span>
-                                <YoboAlphaTextarea
-                                  className="yobo-modal-field w-full !pl-10 !pt-3 min-h-[120px]"
-                                  autoComplete="off"
-                                  placeholder="Sauce algérienne, sans oignons, etc."
-                                  value={note}
-                                  onValueChange={(v) => setPosModalNoteAtIndex(idx, v)}
-                                  keyboardMaxLength={200}
-                                />
-                              </div>
+              <div className="flex min-h-0 min-w-0 flex-col">
+                {/* Onglets Plat 1 … N — défilement horizontal si beaucoup de cartes */}
+                <div className="mb-4 flex w-full min-w-0 max-w-full gap-2 overflow-x-auto overflow-y-hidden overscroll-x-contain scroll-smooth touch-pan-x px-1 pt-1 pb-2">
+                  {Array.from({ length: posModalQty }).map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setActivePosTab(idx)}
+                      className={`inline-flex min-w-[3rem] shrink-0 flex-col items-center justify-center rounded-xl border-2 px-3 py-1.5 transition-all ${
+                        activePosTab === idx
+                          ? 'border-[#4d2600]/45 bg-[var(--accent)] text-[#4d2600] shadow-md'
+                          : 'border-transparent bg-[var(--card)] text-[var(--muted)] hover:border-[var(--accent-border)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent)]'
+                      }`}
+                    >
+                      <span className="text-[9px] font-black uppercase opacity-60">Plat</span>
+                      <span className="text-sm font-black">{idx + 1}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="animate-in fade-in slide-in-from-right-2 duration-200">
+                  {(() => {
+                    const idx = activePosTab < posModalQty ? activePosTab : 0
+                    const isTacos = menuCat === 'tacos' || menuCatKey === 'tacos'
+                    const isG = posModalGratines[idx]
+                    const note = posModalNotes[idx] ?? ''
+
+                    return (
+                      <div key={idx} className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm ring-1 ring-black/5">
+                        <div className="space-y-4">
+                          {isTacos && (
+                            <button
+                              type="button"
+                              onClick={() => setPosModalGratineAtIndex(idx, !isG)}
+                              className={`yobo-size-chip w-full ${isG ? 'yobo-size-chip--active' : ''}`}
+                            >
+                              <div className="text-sm font-bold text-[var(--accent)]">Gratiné</div>
+                              <div className="text-xs text-[var(--muted)]">+{gratinePrice} MAD</div>
+                            </button>
+                          )}
+
+                          <div className="space-y-2">
+                            <div className="ml-1 text-[10px] font-extrabold uppercase tracking-widest text-[var(--muted)]">
+                              Note pour l&apos;article #{idx + 1}
+                            </div>
+                            <div className="relative">
+                              <span className="material-symbols-outlined absolute left-3 top-3.5 text-[20px] text-[var(--muted)]">
+                                edit_note
+                              </span>
+                              <YoboAlphaTextarea
+                                className="yobo-modal-field min-h-[120px] w-full !pl-10 !pt-3"
+                                autoComplete="off"
+                                placeholder="Sauce algérienne, sans oignons, etc."
+                                value={note}
+                                onValueChange={(v) => setPosModalNoteAtIndex(idx, v)}
+                                keyboardMaxLength={200}
+                              />
                             </div>
                           </div>
                         </div>
-                      )
-                    })()}
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {(menuCat === 'tacos' || menuCatKey === 'tacos') && (
-                    <button
-                      type="button"
-                      onClick={() => setPosModalHasGratine(!posModalHasGratine)}
-                      className={`yobo-size-chip w-full ${posModalHasGratine ? 'yobo-size-chip--active' : ''}`}
-                    >
-                      <div className="text-sm font-bold text-[var(--accent)]">
-                        Gratiné
                       </div>
-                      <div className="text-xs text-[var(--muted)]">+{gratinePrice} MAD</div>
-                    </button>
-                  )}
-                  
-                  <div className="space-y-2">
-                    <div className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--muted)] ml-1">Note de préparation</div>
-                    <div className="relative">
-                      <span className="material-symbols-outlined absolute left-3 top-3.5 text-[20px] text-[var(--muted)]">
-                        edit_note
-                      </span>
-                      <YoboAlphaTextarea
-                        id="pos-line-note"
-                        className="yobo-modal-field w-full !pl-10 !pt-3 min-h-[120px]"
-                        autoComplete="off"
-                        placeholder="Ex: Pas d'oignons, sauce à part, bien cuit..."
-                        value={posModalLineNote}
-                        onValueChange={setPosModalLineNote}
-                        keyboardMaxLength={200}
-                      />
-                    </div>
-                  </div>
+                    )
+                  })()}
                 </div>
-              )}
+              </div>
             </div>
           </div>
         ) : null}
@@ -626,8 +604,7 @@ export function YoboAppModals() {
               type="button"
               className="yobo-modal-btn yobo-modal-btn--danger"
               onClick={() => {
-                setLogoutConfirmOpen(false)
-                logout()
+                startLogoutTransition()
               }}
             >
               Se déconnecter
@@ -708,7 +685,7 @@ export function YoboAppModals() {
               <span className="inline-flex items-center justify-center gap-2">
                 {cashCloseLoading ? <SpinnerIcon size={16} /> : null}
                 <span className="material-symbols-outlined text-[18px]">task_alt</span>
-                {cashCloseLoading ? 'Fermeture…' : 'Valider la fermeture'}
+                {cashCloseLoading ? 'Fermeture…' : 'Valider'}
               </span>
             </button>
           </div>
@@ -933,7 +910,9 @@ export function YoboAppModals() {
                           <div className="font-bold leading-tight text-[var(--text-h)]">{line.name}</div>
                           <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                             {line.size?.trim() && (
-                              <span className="text-[10px] font-semibold text-[var(--muted)]">{line.size}</span>
+                              <span className="text-[10px] font-semibold text-[var(--muted)]">
+                                {formatSizeLabelForDisplay(line.size)}
+                              </span>
                             )}
                             {hasGratine && (
                               <span className="yobo-gr-index">
@@ -1105,7 +1084,11 @@ export function YoboAppModals() {
             <button
               type="button"
               className="yobo-modal-btn yobo-modal-btn--danger"
-              disabled={orderCancelLoading || !orderCancelReason.trim()}
+              disabled={
+                orderCancelLoading ||
+                !orderCancelReason.trim() ||
+                (role === 'caissier' && !(orderCancelAuthPin || '').trim())
+              }
               onClick={() => void submitOrderCancel()}
             >
               <span className="inline-flex items-center gap-2">
@@ -1116,22 +1099,49 @@ export function YoboAppModals() {
           </div>
         }
       >
-        <p className="text-sm leading-relaxed text-[var(--muted)]">
-          Indique la raison (obligatoire). Elle restera visible dans l&apos;historique pour cette commande.
-        </p>
-        <label className="mt-3 block" htmlFor="order-cancel-reason">
-          <span className="sr-only">Raison</span>
-          <YoboAlphaInput
-            id="order-cancel-reason"
-            className="yobo-modal-field mt-1 w-full"
-            autoComplete="off"
-            value={orderCancelReason}
-            onValueChange={setOrderCancelReason}
-            placeholder="Ex. client parti, erreur de saisie…"
-            disabled={orderCancelLoading}
-            keyboardMaxLength={500}
-          />
-        </label>
+        <div className="space-y-4">
+          <p className="text-sm leading-relaxed text-[var(--muted)]">
+            Indique la raison (obligatoire). Elle restera visible dans l&apos;historique pour cette commande.
+          </p>
+          <div>
+            <label className="yobo-modal-label" htmlFor="order-cancel-reason">
+              Raison de l&apos;annulation
+            </label>
+            <YoboAlphaInput
+              id="order-cancel-reason"
+              className="yobo-modal-field mt-1 w-full"
+              autoComplete="off"
+              value={orderCancelReason}
+              onValueChange={setOrderCancelReason}
+              placeholder="Ex. client parti, erreur de saisie…"
+              disabled={orderCancelLoading}
+              keyboardMaxLength={500}
+            />
+          </div>
+
+          {role === 'caissier' && (
+            <div className="border-t border-[var(--border)] border-dashed pt-4">
+              <label className="yobo-modal-label" htmlFor="order-cancel-auth-pin">
+                Autorisation : PIN Gérant
+              </label>
+              <YoboNumericInput
+                id="order-cancel-auth-pin"
+                className="yobo-modal-field mt-1 w-full"
+                variant="pin"
+                keyboardMaxLen={12}
+                value={orderCancelAuthPin}
+                onValueChange={setOrderCancelAuthPin}
+                placeholder="PIN"
+                disabled={orderCancelLoading}
+              />
+              {orderCancelAuthError && (
+                <p className="mt-2 text-xs font-bold text-[var(--danger)] animate-in fade-in slide-in-from-top-1">
+                  {orderCancelAuthError}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
       </YoboModal>
 
       <YoboModal
@@ -1403,7 +1413,7 @@ export function YoboAppModals() {
               placeholder="Saisissez le PIN"
             />
             {discountAuthError ? (
-              <p className="mt-2 text-xs font-bold text-red-500">{discountAuthError}</p>
+              <p className="mt-2 text-xs font-bold text-[var(--danger)]">{discountAuthError}</p>
             ) : null}
           </div>
         </div>

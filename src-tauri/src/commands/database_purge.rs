@@ -54,6 +54,7 @@ pub fn database_purge_operational_data(
     .map_err(|e| e.to_string())?;
   db::reset_catalog_to_seed(&tx).map_err(|e| e.to_string())?;
   tx.commit().map_err(|e| e.to_string())?;
+  let _ = conn.execute("VACUUM", []);
 
   db::append_log_best_effort(
     &conn,
@@ -135,6 +136,7 @@ pub fn database_purge_selected_data(
     // On laisse `menu_seed_version` tel quel : le lock empêche l'auto-seed.
   }
   tx.commit().map_err(|e| e.to_string())?;
+  let _ = conn.execute("VACUUM", []);
 
   let mut parts: Vec<&str> = Vec::new();
   if selection.orders {

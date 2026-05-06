@@ -485,7 +485,12 @@ pub fn list_orders_gerant_all(user_id: i64) -> Result<Vec<OrderResponse>, String
 
 
 #[tauri::command]
-pub fn orders_cancel(user_id: i64, order_id: i64, reason: String) -> Result<OrderResponse, String> {
+pub fn orders_cancel(
+  user_id: i64,
+  order_id: i64,
+  reason: String,
+  gerant_pin: Option<String>,
+) -> Result<OrderResponse, String> {
   let reason = reason.trim().to_string();
   if reason.is_empty() {
     return Err("Indiquez une raison d'annulation.".to_string());
@@ -499,6 +504,14 @@ pub fn orders_cancel(user_id: i64, order_id: i64, reason: String) -> Result<Orde
   let role_norm = crate::authz::active_user_role(&conn, user_id)?;
   if role_norm != "gerant" && role_norm != "caissier" {
     return Err("Rôle invalide.".to_string());
+  }
+
+  if role_norm == "caissier" {
+    let p = gerant_pin.as_deref().unwrap_or("").trim();
+    if p.is_empty() {
+      return Err("Indiquez le PIN d’un gérant pour confirmer l’annulation.".to_string());
+    }
+    crate::authz::verify_gerant_pin_authorization(&conn, p)?;
   }
 
   let open_sess: Option<(i64, i64)> = conn

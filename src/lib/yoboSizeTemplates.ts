@@ -1,69 +1,60 @@
 /**
- * Tailles standard YOBO pour produits multi-tailles.
- * Combinaisons finales autorisées : S+L · S+M+L · S+M+L+XL
+ * Libellés de taille : texte libre (après trim), sans contrainte P/M/G/TG.
+ * Ordre d’affichage : tailles courantes en premier, puis ordre alphabétique (fr).
  */
 import { client } from './yoboClientMessages'
-export const YOBO_STD_SIZES = ['S', 'M', 'L', 'XL'] as const
+
+/** Suggestions courantes pour le menu gérant (non exclusif). */
+export const YOBO_STD_SIZES = ['P', 'M', 'G', 'TG'] as const
 export type YoboStdSize = (typeof YOBO_STD_SIZES)[number]
 
-function setsEqual(a: Set<string>, b: ReadonlySet<string>): boolean {
-  if (a.size !== b.size) return false
-  return [...a].every((x) => b.has(x))
+/** Raccourcis supplémentaires (S, L, XL, libellés texte possibles via saisie). */
+export const YOBO_SIZE_QUICK_PRESETS = ['P', 'M', 'G', 'TG', 'S', 'L', 'XL'] as const
+
+export function trimSizeLabel(raw: string): string | null {
+  const t = raw.trim()
+  return t === '' ? null : t
 }
 
-/** États possibles pendant la construction (y compris liste vide). */
-const PROGRESS_SETS: ReadonlyArray<ReadonlySet<string>> = [
-  new Set<string>(),
-  new Set<string>(['S']),
-  new Set<string>(['S', 'L']),
-  new Set<string>(['S', 'M']),
-  new Set<string>(['S', 'M', 'L']),
-  new Set<string>(['S', 'M', 'L', 'XL']),
-]
-
-/** Combinaisons valides pour enregistrer le produit. */
-const FINAL_SETS: ReadonlyArray<ReadonlySet<string>> = [
-  new Set<string>(['S', 'L']),
-  new Set<string>(['S', 'M', 'L']),
-  new Set<string>(['S', 'M', 'L', 'XL']),
-]
-
-export function normalizeStdSizeLabel(raw: string): string | null {
-  const t = raw.trim().toUpperCase()
-  if (t === '') return null
-  if ((YOBO_STD_SIZES as readonly string[]).includes(t)) return t
-  return null
+/** Clé de dédoublonnage (insensible à la casse). */
+export function sizeLabelDedupKey(raw: string): string {
+  return raw.trim().toLocaleLowerCase('fr-FR')
 }
 
-export function isValidYoboMultiSizeProgress(labelSet: Set<string>): boolean {
-  return PROGRESS_SETS.some((p) => setsEqual(labelSet, p))
+function displayRank(label: string): [number, string] {
+  const t = label.trim()
+  const u = t.toUpperCase()
+  if (u === 'P' || u === 'S') return [0, t]
+  if (u === 'M') return [1, t]
+  if (u === 'G' || u === 'L') return [2, t]
+  if (u === 'TG' || u === 'XL') return [3, t]
+  return [100, t]
 }
 
-/** Erreur utilisateur ou null si la combinaison finale est valide. */
-export function validateYoboMultiSizeLabelsFinal(labels: string[]): string | null {
-  const normalized: string[] = []
-  for (const raw of labels) {
-    const n = normalizeStdSizeLabel(raw)
-    if (n === null) {
-      return client.val.menuSizeAllowedOnly
-    }
-    normalized.push(n)
-  }
-  if (new Set(normalized).size !== normalized.length) {
-    return client.val.menuSizeDup
-  }
-  const set = new Set(normalized)
-  const ok = FINAL_SETS.some((allowed) => setsEqual(set, allowed))
-  if (!ok) {
-    return client.val.menuSizeCombo
-  }
-  return null
+/** Compare deux libellés pour tri catalogue / POS (fr). */
+export function compareSizeLabelsFr(a: string, b: string): number {
+  const [ra, ka] = displayRank(a)
+  const [rb, kb] = displayRank(b)
+  if (ra !== rb) return ra - rb
+  return ka.localeCompare(kb, 'fr', { sensitivity: 'base' })
 }
 
 export function sortSizeEntriesByStdOrder<T extends { label: string; price: number }>(entries: T[]): T[] {
-  const rank = (l: string) => {
-    const n = normalizeStdSizeLabel(l)
-    return n ? (YOBO_STD_SIZES as readonly string[]).indexOf(n) : 999
+  return [...entries].sort((a, b) => compareSizeLabelsFr(a.label, b.label))
+}
+
+/** Libellés non vides, sans doublon (casse ignorée). */
+export function validateYoboMultiSizeLabels(labels: string[]): string | null {
+  const keys: string[] = []
+  for (const raw of labels) {
+    const t = trimSizeLabel(raw)
+    if (t === null) {
+      return client.val.menuSizeLabel
+    }
+    keys.push(sizeLabelDedupKey(t))
   }
-  return [...entries].sort((a, b) => rank(a.label) - rank(b.label))
+  if (new Set(keys).size !== keys.length) {
+    return client.val.menuSizeDup
+  }
+  return null
 }

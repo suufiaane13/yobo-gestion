@@ -1,12 +1,15 @@
-import { useMemo, useState, useRef } from 'react'
+import { invoke } from '@tauri-apps/api/core'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useShallow } from 'zustand/shallow'
 import { YoboNumericInput } from '../components/YoboKeyboardInputs'
 import { SpinnerIcon } from '../components/icons/SpinnerIcon'
 import { MENU_ITEMS, type MenuFallbackCategory as Category } from '../data/menuFallback'
 import { orderCountsTowardRevenue } from '../lib/orderStatus'
 import { normalizeCategoryKey } from '../lib/normalizeCategoryKey'
-import { getSingleVariantEntry, isBlankSizeKey } from '../lib/productSizes'
+import { formatSizeLabelForDisplay, getSingleVariantEntry, isBlankSizeKey } from '../lib/productSizes'
+import { isTauriRuntime } from '../lib/isTauriRuntime'
 import { client } from '../lib/yoboClientMessages'
+import type { CashSessionOpenTotalsDto } from '../types/yoboApp'
 import { useYoboStore } from '../store'
 
 export function CaissePage() {
@@ -78,7 +81,10 @@ export function CaissePage() {
   )
 
   const catalogCategories = useYoboStore((s) => s.catalogCategories)
+  const userId = useYoboStore((s) => s.userId)
+  const ordersLoading = useYoboStore((s) => s.ordersLoading)
 
+  /** Fallback si l’API n’a pas encore répondu (caissier : liste session complète ; gérant : pagination → souvent faux). */
   const currentSessionOrdersTotal = useMemo(() => {
     if (!cashSession) return 0
     return orders.reduce((acc, o) => {
@@ -92,6 +98,56 @@ export function CaissePage() {
     const total = cashSession.openingAmount + currentSessionOrdersTotal
     return Math.round(total * 100) / 100
   }, [cashSession, currentSessionOrdersTotal])
+
+  const [cashLiveTotals, setCashLiveTotals] = useState<CashSessionOpenTotalsDto | null>(null)
+
+  const refreshCashLiveTotals = useCallback(async () => {
+    if (!isTauriRuntime() || userId == null || cashSession == null) {
+      setCashLiveTotals(null)
+      return
+    }
+    try {
+      const t = await invoke<CashSessionOpenTotalsDto | null>('cash_session_live_totals', { userId })
+      setCashLiveTotals(t != null && t.sessionId === cashSession.id ? t : null)
+    } catch {
+      setCashLiveTotals(null)
+    }
+  }, [userId, cashSession])
+
+  useEffect(() => {
+    let cancelled = false
+    const t = window.setTimeout(() => {
+      if (!cancelled) void refreshCashLiveTotals()
+    }, 0)
+    return () => {
+      cancelled = true
+      window.clearTimeout(t)
+    }
+  }, [refreshCashLiveTotals])
+
+  const prevOrdersLoading = useRef(false)
+  useEffect(() => {
+    const shouldRefresh = prevOrdersLoading.current && !ordersLoading && cashSession != null
+    prevOrdersLoading.current = ordersLoading
+    if (!shouldRefresh) return
+    const t = window.setTimeout(() => {
+      void refreshCashLiveTotals()
+    }, 0)
+    return () => window.clearTimeout(t)
+  }, [ordersLoading, cashSession, refreshCashLiveTotals])
+
+  const cardTotals =
+    cashLiveTotals != null && cashSession != null && cashLiveTotals.sessionId === cashSession.id
+      ? cashLiveTotals
+      : null
+
+  const sessionSalesDisplayed =
+    cardTotals != null
+      ? Math.round(cardTotals.salesTotal * 100) / 100
+      : Math.round(currentSessionOrdersTotal * 100) / 100
+
+  const cashRegisterDisplayed =
+    cardTotals != null ? Math.round(cardTotals.theoretical * 100) / 100 : (cashRegisterTotal ?? 0)
 
   const cartTotal =
     Math.round(cart.reduce((sum, item) => sum + item.price * item.quantity, 0) * 100) / 100
@@ -345,7 +401,7 @@ export function CaissePage() {
           </div>
 
           {!cashCardCollapsed && (
-            <div className="grid grid-cols-3 gap-1">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-1">
               <div className="min-w-0 rounded-lg border border-[var(--border)] bg-[var(--card)] px-2 py-1">
                 <div className="truncate text-[8px] font-bold uppercase tracking-[0.08em] text-[var(--muted)]">Départ</div>
                 <div className="truncate text-[11px] font-black tabular-nums leading-tight text-[var(--text-h)]">
@@ -355,13 +411,13 @@ export function CaissePage() {
               <div className="min-w-0 rounded-lg border border-[var(--border)] bg-[var(--card)] px-2 py-1">
                 <div className="truncate text-[8px] font-bold uppercase tracking-[0.08em] text-[var(--muted)]">Ventes</div>
                 <div className="truncate text-[11px] font-black tabular-nums leading-tight text-[var(--text-h)]">
-                  {`${currentSessionOrdersTotal.toLocaleString()} MAD`}
+                  {`${sessionSalesDisplayed.toLocaleString()} MAD`}
                 </div>
               </div>
               <div className="min-w-0 rounded-lg border border-[var(--accent-border)] bg-[var(--accent-bg)] px-2 py-1">
                 <div className="truncate text-[8px] font-bold uppercase tracking-[0.08em] text-[var(--muted)]">Caisse</div>
                 <div className="truncate text-[11px] font-black tabular-nums leading-tight text-[var(--accent)]">
-                  {`${(cashRegisterTotal ?? 0).toLocaleString()} MAD`}
+                  {`${cashRegisterDisplayed.toLocaleString()} MAD`}
                 </div>
               </div>
             </div>
@@ -397,14 +453,14 @@ export function CaissePage() {
                 <div
                   key={dndId}
                   id={dndId}
-                  className={`relative shrink-0 transition-all duration-300 ${isSelectedToMove ? 'scale-105 z-50' : ''} ${isOtherSelected ? 'opacity-40 grayscale-[0.5]' : ''} ${isBlockedByProduct ? 'pointer-events-none opacity-10 grayscale' : ''}`}
+                  className={`relative shrink-0 transition-all duration-300 ${isSelectedToMove ? 'z-50' : ''} ${isOtherSelected ? 'opacity-40 grayscale-[0.5]' : ''} ${isBlockedByProduct ? 'pointer-events-none opacity-10 grayscale' : ''}`}
                 >
                   <button
                     type="button"
                     className={`flex w-[8.5rem] min-h-[70px] flex-col items-center justify-center rounded-2xl px-3 pt-2 pb-3 font-bold transition-all ${(isActive && !isReorderMode) || isSelectedToMove
                         ? 'bg-[var(--accent)] text-[#4d2600] elevation-sm'
                         : 'bg-[var(--card)] text-[var(--text-h)] hover:brightness-110 shadow-sm border border-transparent'
-                      } ${isSelectedToMove ? 'ring-2 ring-[var(--text-h)] ring-offset-2 ring-offset-[var(--background)] scale-105' : ''} ${!hasCatalog || isReorderMode ? 'cursor-default' : 'cursor-pointer'} ${isActive ? 'border-[var(--accent)]' : 'hover:border-[var(--border)]'}`}
+                      } ${isSelectedToMove ? 'ring-2 ring-[#4d2600] ring-offset-2 ring-offset-[var(--accent)]' : ''} ${!hasCatalog || isReorderMode ? 'cursor-default' : 'cursor-pointer'} ${isActive ? 'border-[var(--accent)]' : 'hover:border-[var(--border)]'}`}
                     onClick={(e) => {
                       if (hasMoved || isBlockedByProduct) return // On ne fait rien si c'était un scroll ou bloqué
 
@@ -456,7 +512,7 @@ export function CaissePage() {
         </div>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_400px] gap-6">
+      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_400px] gap-4 lg:gap-6">
 
         {/* Left: products area */}
         <div className="min-w-0 flex flex-col">
@@ -529,7 +585,7 @@ export function CaissePage() {
           )}
 
           {displayMode === 'grid' ? (
-            <div className="grid grid-cols-3 gap-3 overflow-y-auto pr-2 min-h-0">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 overflow-y-auto pr-2 min-h-0">
               {currentItems.map((item, i) => {
                 const prodId = 'id' in item ? (item as { id: number }).id : undefined
                 const isSelectedToMove = isReorderMode && selectedProdId !== null && selectedProdId === prodId
@@ -540,7 +596,7 @@ export function CaissePage() {
                   <button
                     key={`${hasCatalog ? menuCatKey : menuCat}-${item.name}-${i}`}
                     type="button"
-                    className={`group relative rounded-xl overflow-hidden text-center transition-all ${isSelectedToMove ? 'bg-[var(--accent)] text-[#4d2600] scale-105 z-50 ring-2 ring-[var(--text-h)] ring-offset-2 ring-offset-[var(--background)]' : 'bg-[var(--surface)] text-[var(--text-h)] hover:bg-[var(--card)]'} ${isOtherSelected ? 'opacity-40 grayscale-[0.8]' : ''} ${isBlockedByCategory ? 'pointer-events-none opacity-10 grayscale' : ''} active:scale-[0.98]`}
+                    className={`group relative rounded-xl overflow-hidden text-center transition-all ${isSelectedToMove ? 'bg-[var(--accent)] text-[#4d2600] z-50 ring-2 ring-[#4d2600] ring-offset-2 ring-offset-[var(--accent)]' : 'bg-[var(--surface)] text-[var(--text-h)] hover:bg-[var(--card)]'} ${isOtherSelected ? 'opacity-40 grayscale-[0.8]' : ''} ${isBlockedByCategory ? 'pointer-events-none opacity-10 grayscale' : ''}`}
                     onClick={() => {
                       if (isBlockedByCategory) return
                       if (isReorderMode) {
@@ -553,7 +609,7 @@ export function CaissePage() {
                     <div className="flex min-h-[124px] flex-col items-center justify-center p-4">
                       {/* Reorder Indicator for Product Grid */}
                       {isReorderMode && (
-                        <div className={`absolute top-2 right-2 flex size-6 items-center justify-center rounded-full shadow-md transition-transform hover:scale-110 ${
+                        <div className={`absolute top-2 right-2 flex size-6 items-center justify-center rounded-full shadow-md transition-colors ${
                           isSelectedToMove 
                             ? 'bg-[var(--surface)] text-[var(--muted)]' 
                             : 'bg-[var(--accent)] text-[#4d2600]'
@@ -573,7 +629,7 @@ export function CaissePage() {
           ) : null}
 
           {displayMode === 'list' ? (
-            <div className="flex flex-col gap-2 overflow-y-auto pr-2">
+            <div className="flex min-h-0 flex-col gap-2 overflow-y-auto pr-2">
               {currentItems.map((item, i) => {
                 const prices = Object.values(item.sizes)
                 const minPrice = prices.length > 0 ? Math.min(...prices) : 0
@@ -585,12 +641,13 @@ export function CaissePage() {
                 const isBlockedByCategory = isReorderMode && selectedCatId !== null
 
                 return (
-                  <div
+                  <button
                     key={dndId}
-                    className={`flex w-full items-center justify-between rounded-xl px-3 py-3 text-left transition-all duration-300 ${isSelectedToMove
-                        ? 'bg-[var(--accent)] text-[#4d2600] scale-[1.01] z-50 ring-2 ring-[var(--text-h)]'
-                        : 'bg-[var(--surface)] hover:bg-[var(--card)]'
-                      } ${isOtherSelected ? 'opacity-40 grayscale-[0.8]' : ''} ${isBlockedByCategory ? 'pointer-events-none opacity-10 grayscale' : ''}`}
+                    type="button"
+                    className={`group relative flex w-full min-h-[3.25rem] items-stretch gap-2 rounded-xl border px-2.5 py-2 text-left transition-all duration-200 ${isSelectedToMove
+                        ? 'z-50 border-[color-mix(in_oklab,#4d2600_55%,var(--accent))] bg-[var(--accent)] shadow-[0_8px_28px_-14px_rgba(240,133,10,0.5)] ring-2 ring-[#4d2600]'
+                        : 'border-[color-mix(in_oklab,var(--border)_92%,transparent)] bg-[var(--card)] shadow-[0_3px_14px_-8px_rgba(0,0,0,0.5)] hover:border-[color-mix(in_oklab,var(--accent)_42%,var(--border))] hover:shadow-[0_10px_28px_-14px_rgba(0,0,0,0.55)] active:translate-y-px'
+                      } ${isOtherSelected ? 'opacity-40 grayscale-[0.85]' : ''} ${isBlockedByCategory ? 'pointer-events-none opacity-10 grayscale' : ''}`}
                     onClick={() => {
                       if (isBlockedByCategory) return
                       if (isReorderMode) {
@@ -600,28 +657,50 @@ export function CaissePage() {
                       }
                     }}
                   >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex min-w-0 items-center gap-3">
-                        {/* Reorder Indicator for Product List */}
-                        {isReorderMode && (
-                          <div className={`flex size-7 shrink-0 items-center justify-center rounded-lg shadow-sm ${
-                            isSelectedToMove 
-                              ? 'bg-[var(--surface)] text-[var(--muted)]' 
-                              : 'bg-[var(--accent)] text-[#4d2600]'
-                          }`}>
-                            <span className="material-symbols-outlined text-[16px]">drag_indicator</span>
-                          </div>
-                        )}
-                        <div className="text-xl" aria-hidden>
-                          {item.emoji}
-                        </div>
-                        <span className="truncate text-sm font-extrabold text-[var(--text-h)]">{item.name}</span>
-                      </div>
-                    </div>
-                    <span className="shrink-0 rounded-lg bg-[var(--accent-bg)] px-2.5 py-1 text-xs font-black tabular-nums text-[var(--accent)]">
-                      {`${minPrice} MAD`}
+                    {isReorderMode ? (
+                      <span
+                        className={`flex size-8 shrink-0 items-center justify-center self-center rounded-lg ring-1 ${
+                          isSelectedToMove
+                            ? 'bg-[color-mix(in_oklab,#4d2600_18%,transparent)] text-[#4d2600] ring-[#4d2600]/35'
+                            : 'bg-[var(--accent-bg)] text-[var(--accent)] ring-[var(--accent-border)]/35'
+                        }`}
+                        aria-hidden
+                      >
+                        <span className="material-symbols-outlined text-[16px]">drag_indicator</span>
+                      </span>
+                    ) : null}
+
+                    <span
+                      className={`flex size-11 shrink-0 items-center justify-center rounded-xl text-xl leading-none ring-1 ${
+                        isSelectedToMove
+                          ? 'bg-[color-mix(in_oklab,#4d2600_14%,transparent)] ring-[#4d2600]/25 shadow-inner'
+                          : 'bg-[color-mix(in_oklab,var(--surface)_65%,var(--bg))] ring-[var(--border)] shadow-inner group-hover:bg-[color-mix(in_oklab,var(--surface)_55%,var(--card))]'
+                      }`}
+                      aria-hidden
+                    >
+                      {item.emoji}
                     </span>
-                  </div>
+
+                    <span className="min-w-0 flex-1 self-center py-0.5">
+                      <span
+                        className={`block truncate text-sm font-black leading-tight tracking-tight sm:text-[15px] ${isSelectedToMove ? 'text-[#4d2600]' : 'text-[var(--text-h)]'}`}
+                      >
+                        {item.name}
+                      </span>
+                    </span>
+
+                    <span className="flex shrink-0 flex-col justify-center self-stretch">
+                      <span
+                        className={`rounded-lg px-2 py-1.5 text-xs font-black tabular-nums ring-1 sm:px-2.5 sm:text-[13px] ${
+                          isSelectedToMove
+                            ? 'bg-[color-mix(in_oklab,#4d2600_18%,transparent)] text-[#4d2600] ring-[#4d2600]/30'
+                            : 'bg-[var(--accent-bg)] text-[var(--accent)] ring-[color-mix(in_oklab,var(--accent)_38%,transparent)]'
+                        }`}
+                      >
+                        {minPrice} MAD
+                      </span>
+                    </span>
+                  </button>
                 )
               })}
             </div>
@@ -710,7 +789,7 @@ export function CaissePage() {
                         </div>
                         <div className="yobo-cart-line__sub">
                           {!isBlankSizeKey(item.size) ? (
-                            <span className="yobo-cart-line__size">{`Taille ${item.size}`}</span>
+                            <span className="yobo-cart-line__size">{`Taille ${formatSizeLabelForDisplay(item.size)}`}</span>
                           ) : null}
                           {!isBlankSizeKey(item.size) ? (
                             <span className="yobo-cart-line__dot" aria-hidden>

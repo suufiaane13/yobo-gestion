@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { Children, useEffect, useMemo, useRef } from 'react'
 
 type YoboModalProps = {
   open: boolean
@@ -31,6 +31,14 @@ export function YoboModal({
 }: YoboModalProps) {
   const panelRef = useRef<HTMLDivElement>(null)
   const lastActiveElementRef = useRef<HTMLElement | null>(null)
+
+  const hasBodyContent = useMemo(
+    () =>
+      Children.toArray(children).some(
+        (c) => c != null && typeof c !== 'boolean',
+      ),
+    [children],
+  )
 
   const getFocusable = useMemo(() => {
     return () => {
@@ -170,9 +178,17 @@ export function YoboModal({
               </span>
             </button>
           </div>
-          <div className={variant === 'slideOverRight' ? 'yobo-modal-body yobo-modal-body--slideover' : 'yobo-modal-body'}>
-            {children}
-          </div>
+          {hasBodyContent ? (
+            <div
+              className={
+                variant === 'slideOverRight'
+                  ? 'yobo-modal-body yobo-modal-body--slideover'
+                  : 'yobo-modal-body'
+              }
+            >
+              {children}
+            </div>
+          ) : null}
           {footer ? (
             <div className={variant === 'slideOverRight' ? 'yobo-modal-footer yobo-modal-footer--slideover' : 'yobo-modal-footer'}>
               {footer}

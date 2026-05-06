@@ -136,6 +136,8 @@ export function EmojiPicker({
 
   useLayoutEffect(() => {
     if (!open) return
+    // Mesure synchrone avant le premier paint : sinon le panneau apparaît un instant en (0,0).
+    updatePanelPosition()
     let raf2 = 0
     const raf1 = requestAnimationFrame(() => {
       updatePanelPosition()

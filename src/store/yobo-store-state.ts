@@ -72,8 +72,12 @@ export interface YoboState {
   orderCancelModalOpen: boolean
   orderCancelReason: string
   orderCancelLoading: boolean
+  orderCancelAuthPin: string
+  orderCancelAuthError: string | null
   ordersLoading: boolean
   loginLoading: boolean
+  /** Voile logo après connexion réussie (catalogue chargé + durée min.). */
+  sessionEntrySplashOpen: boolean
   toasts: ToastItem[]
   resetPinTarget: CaissierDto | null
   resetPinValue: string
@@ -131,6 +135,8 @@ export interface YoboState {
   printLogs: PrintLogEntry[]
   /** Confirmation déconnexion si caisse ouverte. */
   logoutConfirmOpen: boolean
+  /** Fondu sortie avant `logout()` (transition vers login). */
+  logoutFadePending: boolean
   /** Réductions gérant */
   discountModalOpen: boolean
   discountAuthModalOpen: boolean
@@ -151,6 +157,10 @@ export interface YoboState {
   /** Confirmation de fermeture de l'application. */
   exitConfirmOpen: boolean
   gratinePrice: number
+  /** Si activé : modal « montant reçu / rendu » avant validation (réglage gérant, app_meta). */
+  cashRenduEnabled: boolean
+  /** Clavier tactile plein écran YOBO ; sinon saisie clavier système (app_meta). */
+  virtualKeyboardEnabled: boolean
   /** Données bitmap du logo pour impression thermique. */
   ticketLogo: BitmapData | null
   /** Pour l'installation forcée après 7 jours */
@@ -207,8 +217,11 @@ export function createInitialYoboState(): YoboState {
     orderCancelModalOpen: false,
     orderCancelReason: '',
     orderCancelLoading: false,
+    orderCancelAuthPin: '',
+    orderCancelAuthError: null,
     ordersLoading: false,
     loginLoading: false,
+    sessionEntrySplashOpen: false,
     toasts: [],
     resetPinTarget: null,
     resetPinValue: '',
@@ -261,6 +274,7 @@ export function createInitialYoboState(): YoboState {
     ticketPrinterB: '',
     printLogs: [],
     logoutConfirmOpen: false,
+    logoutFadePending: false,
     discountModalOpen: false,
     discountAuthModalOpen: false,
     discountAuthPin: '',
@@ -271,6 +285,8 @@ export function createInitialYoboState(): YoboState {
     deliveryModalOpen: false,
     exitConfirmOpen: false,
     gratinePrice: 5,
+    cashRenduEnabled: true,
+    virtualKeyboardEnabled: true,
     ticketLogo: null,
     updateFirstSeenAt: null,
     updateVersionSeen: null,

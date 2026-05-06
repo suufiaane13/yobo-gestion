@@ -1,5 +1,5 @@
 ================================================================================
-  YOBO Gestion — guide rapide (utilisateur final)
+  YOBO — guide rapide (utilisateur final)
 ================================================================================
 
 1) INSTALLATION (Windows 10 ou 11)
@@ -10,7 +10,7 @@
      « Exécuter quand même » si vous faites confiance à l’éditeur.
 
 2) PREMIER LANCEMENT
-   • Ouvrez « YOBO Gestion » depuis le menu Démarrer ou le bureau.
+   • Ouvrez « YOBO » depuis le menu Démarrer ou le bureau.
    • Sur l’écran de connexion, le profil « Gérant » doit être sélectionné pour le
      compte de démonstration (ex. identifiant admin, code PIN 1234). Le profil
      « Caissier » sert aux comptes créés par le gérant dans l’application.
@@ -33,7 +33,7 @@
      (désinstallation de l’ancienne version recommandée avant, si indiqué).
 
 5) DÉSINSTALLATION
-   • Paramètres Windows → Applications → YOBO Gestion → Désinstaller.
+   • Paramètres Windows → Applications → YOBO → Désinstaller.
    • La base locale peut rester sur le disque ; supprimez-la seulement si vous
      savez ce que vous faites (perte des données).
 

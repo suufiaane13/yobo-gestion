@@ -13,4 +13,17 @@ export default defineConfig({
     // (sinon Tauri charge encore 5173 et l’UI ne correspond pas au bon serveur).
     strictPort: true,
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react')) return 'vendor-react'
+            if (id.includes('material-symbols')) return 'vendor-ui'
+            return 'vendor'
+          }
+        },
+      },
+    },
+  },
 })

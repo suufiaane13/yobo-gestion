@@ -1,5 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getCurrentWindow } from '@tauri-apps/api/window'
+import { captureMainWindowScreenshot } from '../lib/captureMainWindowScreenshot'
+import { isTauriRuntime } from '../lib/isTauriRuntime'
+import { client } from '../lib/yoboClientMessages'
+import { useYoboStore } from '../store'
 import { YoboUpdater } from './YoboUpdater'
 import { YoboAvatarDisplay } from './YoboAvatarPicker'
 
@@ -201,10 +205,24 @@ export function YoboTitleBar({
   onLogout,
   onCloseRequest,
 }: YoboTitleBarProps) {
+  const pushToast = useYoboStore((s) => s.pushToast)
   const appWindow = getCurrentWindow()
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [now, setNow] = useState(() => new Date())
   const [showUpdater, setShowUpdater] = useState(false)
+  const [screenshotBusy, setScreenshotBusy] = useState(false)
+  const updaterRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!showUpdater) return
+    const onDown = (e: MouseEvent) => {
+      if (updaterRef.current && !updaterRef.current.contains(e.target as Node)) {
+        setShowUpdater(false)
+      }
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [showUpdater])
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(new Date()), 1000)
@@ -280,9 +298,9 @@ export function YoboTitleBar({
                title={`${badgeKind === 'gerant' ? 'Gérant' : 'Caissier'} : ${badgeText}`}
             >
               {avatar ? (
-                <YoboAvatarDisplay id={avatar} size="sm" className="yobo-titlebar__user-icon !bg-transparent !shadow-none" />
+                <YoboAvatarDisplay id={avatar} size="xs" className="yobo-titlebar__user-icon !bg-transparent !shadow-none" />
               ) : (
-                <span className="material-symbols-outlined yobo-titlebar__user-icon">
+                <span className="material-symbols-outlined yobo-titlebar__user-icon !text-[16px]">
                   {badgeKind === 'gerant' ? 'shield_person' : 'person'}
                 </span>
               )}
@@ -314,7 +332,7 @@ export function YoboTitleBar({
 
               <span className="yobo-titlebar__action-sep" aria-hidden />
               
-              <div className="yobo-titlebar__updater-wrapper">
+              <div className="yobo-titlebar__updater-wrapper" ref={updaterRef}>
                 <button
                   type="button"
                   className={`yobo-titlebar__btn ${showUpdater ? 'yobo-titlebar__btn--active' : ''}`}
@@ -326,10 +344,54 @@ export function YoboTitleBar({
                 
                 {showUpdater && (
                   <div className="yobo-titlebar__updater-dropdown">
+                    <div className="flex justify-between items-center p-3 border-b border-[var(--border)] mb-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">Mise à jour système</span>
+                      <button 
+                        onClick={() => setShowUpdater(false)}
+                        className="size-6 flex items-center justify-center rounded-full hover:bg-black/20 text-[var(--muted)] hover:text-[var(--danger)] transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">close</span>
+                      </button>
+                    </div>
                     <YoboUpdater />
                   </div>
                 )}
               </div>
+
+              <span className="yobo-titlebar__action-sep" aria-hidden />
+              <button
+                type="button"
+                className={`yobo-titlebar__btn${screenshotBusy ? ' yobo-titlebar__btn--disabled' : ''}`}
+                aria-label="Capture d’écran"
+                title="Enregistrer une capture de la fenêtre"
+                disabled={screenshotBusy}
+                onClick={() => {
+                  void (async () => {
+                    if (!isTauriRuntime()) {
+                      pushToast('warning', 'Capture disponible uniquement dans l’application bureau.')
+                      return
+                    }
+                    setScreenshotBusy(true)
+                    try {
+                      const r = await captureMainWindowScreenshot()
+                      if (r.ok) {
+                        pushToast('success', client.success.screenshotSaved)
+                      } else if (!r.cancelled && r.message) {
+                        pushToast('error', r.message)
+                      }
+                    } finally {
+                      setScreenshotBusy(false)
+                    }
+                  })()
+                }}
+              >
+                <span
+                  className={`material-symbols-outlined text-[18px]${screenshotBusy ? ' animate-pulse' : ''}`}
+                  aria-hidden
+                >
+                  {screenshotBusy ? 'hourglass_empty' : 'photo_camera'}
+                </span>
+              </button>
 
               <span className="yobo-titlebar__action-sep" aria-hidden />
               <button

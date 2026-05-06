@@ -44,6 +44,11 @@ const ORDER_STATUS_OPTIONS: { value: HistoryOrderStatusFilter; label: string }[]
   { value: 'cancelled', label: 'Annulées' },
 ]
 
+/** Libellé KPI « nombre » : aligné sur les ventes (validées) sauf filtre Annulées. */
+function historiqueOrderCountKpiLabel(statusFilter: HistoryOrderStatusFilter): string {
+  return statusFilter === 'cancelled' ? 'Annulées' : 'Validées'
+}
+
 function orderTypeForThermal(
   ot: string | null | undefined,
 ): 'sur_place' | 'emporter' | 'livraison' | undefined {
@@ -188,13 +193,16 @@ export function HistoriquePage() {
 
   const historyFilteredStats = useMemo(() => {
     const list = historyOrdersFiltered
-    const n = list.length
     const revenueRows = list.filter((o) => orderCountsTowardRevenue(o))
     const total = Math.round(revenueRows.reduce((acc, o) => acc + o.total, 0) * 100) / 100
     const avg =
       revenueRows.length > 0 ? Math.round((total / revenueRows.length) * 100) / 100 : null
+    // Même règle que la base (sessions / clôture) : ventes = commandes « validated » uniquement.
+    // Avec filtre « Tous statuts », le tableau liste encore annulations / modifiées, mais le nombre
+    // affiché ici suit la recette — comme « Cmd. » sur une ligne de session.
+    const n = historyOrderStatusFilter === 'cancelled' ? list.length : revenueRows.length
     return { n, total, avg }
-  }, [historyOrdersFiltered])
+  }, [historyOrdersFiltered, historyOrderStatusFilter])
 
   const historySessionsPaginated = useMemo(
     () => paginateSlice(historyClosedSessionsFiltered, historySessionsPage, historySessionsPageSize),
@@ -213,7 +221,7 @@ export function HistoriquePage() {
         sales: historyFilteredStats.total,
         count: historyFilteredStats.n,
         avg: historyFilteredStats.avg,
-        countLabel: 'Commandes',
+        countLabel: historiqueOrderCountKpiLabel(historyOrderStatusFilter),
         avgLabel: 'P. Moyen',
         loading: ordersLoading
       }
@@ -234,7 +242,7 @@ export function HistoriquePage() {
         sales: historyFilteredStats.total,
         count: historyFilteredStats.n,
         avg: historyFilteredStats.avg,
-        countLabel: 'Commandes',
+        countLabel: historiqueOrderCountKpiLabel(historyOrderStatusFilter),
         avgLabel: 'P. Moyen',
         loading: ordersLoading
       }
@@ -242,6 +250,7 @@ export function HistoriquePage() {
   }, [
     historyInnerTab,
     historySessionFilter,
+    historyOrderStatusFilter,
     historyFilteredStats,
     historySessionsFilteredStats,
     historySessionsLoading,
@@ -911,9 +920,9 @@ export function HistoriquePage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-[10px] font-black tracking-tighter text-[var(--text-h)] bg-[color-mix(in_oklab,var(--border)_45%,transparent)] px-1.5 py-0.5 rounded">#{order.id}</span>
-                        {order.status !== 'validated' && (
+                        {order.status !== 'validated' && order.status !== 'cancelled' && (
                           <span className={`rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-widest ${
-                            order.status === 'cancelled' ? 'bg-red-500/10 text-red-400 ring-1 ring-red-500/20' : 'bg-amber-500/10 text-amber-300 ring-1 ring-amber-500/20'
+                            order.status === 'modified' ? 'bg-amber-500/10 text-amber-300 ring-1 ring-amber-500/20' : 'bg-blue-500/10 text-blue-300 ring-1 ring-blue-500/20'
                           }`}>
                             {orderStatusLabelFr(order.status)}
                           </span>
@@ -949,61 +958,69 @@ export function HistoriquePage() {
                       </div>
                         
                         <div className="flex gap-2">
-                          <button
-                            type="button"
-                            disabled={
-                              historyThermalPrintOrderId === order.id ||
-                              userId == null ||
-                              order.status !== 'validated'
-                            }
-                            className="group/btn flex size-8 items-center justify-center rounded-xl bg-[var(--accent-bg)] text-[var(--accent)] ring-1 ring-[color-mix(in_oklab,var(--accent)_25%,transparent)] transition-all hover:brightness-110 active:scale-95 disabled:hidden"
-                            title="Ticket thermique 80 mm"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              if (userId == null) return
-                              const { ticketPrinterA, ticketPrinterB } = useYoboStore.getState()
-                              const oid = order.id
-                              setHistoryThermalPrintOrderId(oid)
-                              void (async () => {
-                                try {
-                                  const dto = await invoke<OrderTicketPrintDto>('get_order_ticket_for_print', {
-                                    userId,
-                                    orderId: oid,
-                                  })
-                                  const [detail] = orderTicketDetailsFromApi([{
-                                    id: dto.id,
-                                    time: dto.time,
-                                    total: dto.total,
-                                    cashier: dto.cashier,
-                                    lines: dto.lines,
-                                  }])
-                                  await printOrderTicket({
-                                    shopLabel: ticketShopLabel,
-                                    shopPhone: ticketShopPhone,
-                                    orderId: dto.id,
-                                    timeIso: dto.time,
-                                    cashier: dto.cashier,
-                                    orderType: orderTypeForThermal(dto.orderType ?? undefined),
-                                    comment: dto.orderComment ?? null,
-                                    customerPhone: dto.customerPhone ?? null,
-                                    customerAddress: dto.customerAddress ?? null,
-                                    lines: detail.lines,
-                                    total: dto.total,
-                                    printerA: ticketPrinterA.trim(),
-                                    printerB: ticketPrinterB.trim(),
-                                  })
-                                  pushToast('success', client.success.ticketPrintStarted)
-                                } catch (err) {
-                                  logDevError('print_from_history', err)
-                                  pushToast('error', userFacingErrorMessage(err, client.error.loadOrderTicketPrint))
-                                } finally {
-                                  setHistoryThermalPrintOrderId(null)
-                                }
-                              })()
-                            }}
-                          >
-                            <span className="material-symbols-outlined text-[16px]">print</span>
-                          </button>
+                          {order.status === 'cancelled' ? (
+                            <div className="flex size-8 items-center justify-center rounded-xl bg-red-500/10 text-red-400 ring-1 ring-red-500/20" title="Commande annulée">
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M18 6L6 18M6 6L12 12L18 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled={
+                                historyThermalPrintOrderId === order.id ||
+                                userId == null ||
+                                order.status !== 'validated'
+                              }
+                              className="group/btn flex size-8 items-center justify-center rounded-xl bg-[var(--accent-bg)] text-[var(--accent)] ring-1 ring-[color-mix(in_oklab,var(--accent)_25%,transparent)] transition-all hover:brightness-110 active:scale-95 disabled:hidden"
+                              title="Ticket thermique 80 mm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                if (userId == null) return
+                                const { ticketPrinterA, ticketPrinterB } = useYoboStore.getState()
+                                const oid = order.id
+                                setHistoryThermalPrintOrderId(oid)
+                                void (async () => {
+                                  try {
+                                    const dto = await invoke<OrderTicketPrintDto>('get_order_ticket_for_print', {
+                                      userId,
+                                      orderId: oid,
+                                    })
+                                    const [detail] = orderTicketDetailsFromApi([{
+                                      id: dto.id,
+                                      time: dto.time,
+                                      total: dto.total,
+                                      cashier: dto.cashier,
+                                      lines: dto.lines,
+                                    }])
+                                    await printOrderTicket({
+                                      shopLabel: ticketShopLabel,
+                                      shopPhone: ticketShopPhone,
+                                      orderId: dto.id,
+                                      timeIso: dto.time,
+                                      cashier: dto.cashier,
+                                      orderType: orderTypeForThermal(dto.orderType ?? undefined),
+                                      comment: dto.orderComment ?? null,
+                                      customerPhone: dto.customerPhone ?? null,
+                                      customerAddress: dto.customerAddress ?? null,
+                                      lines: detail.lines,
+                                      total: dto.total,
+                                      printerA: ticketPrinterA.trim(),
+                                      printerB: ticketPrinterB.trim(),
+                                    })
+                                    pushToast('success', client.success.ticketPrintStarted)
+                                  } catch (err) {
+                                    logDevError('print_from_history', err)
+                                    pushToast('error', userFacingErrorMessage(err, client.error.loadOrderTicketPrint))
+                                  } finally {
+                                    setHistoryThermalPrintOrderId(null)
+                                  }
+                                })()
+                              }}
+                            >
+                              <span className="material-symbols-outlined text-[16px]">print</span>
+                            </button>
+                          )}
                         </div>
                       </div>
                   </div>

@@ -13,4 +13,5 @@ pub mod printers;
 pub mod ticket_settings;
 pub mod users;
 pub mod system;
+pub mod screenshot;
 

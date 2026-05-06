@@ -11,7 +11,24 @@ pub fn run() {
   tauri::Builder::default()
     .plugin(tauri_plugin_printer_v2::init())
     .plugin(tauri_plugin_updater::Builder::new().build())
+    .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+      let _ = app
+        .get_webview_window("main")
+        .expect("no main window")
+        .set_focus();
+    }))
     .setup(|app| {
+      // Empêche la mise en veille de l'écran et du système pendant que YOBO est ouvert.
+      #[cfg(target_os = "windows")]
+      {
+        use windows::Win32::System::Power::{
+          SetThreadExecutionState, ES_CONTINUOUS, ES_DISPLAY_REQUIRED, ES_SYSTEM_REQUIRED,
+        };
+        unsafe {
+          let _ = SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED);
+        }
+      }
+
       // Plein écran exclusif au lancement (écran entier ; la barre du titre YOBO permet de quitter).
       if let Some(w) = app.get_webview_window("main") {
         let _ = w.set_fullscreen(true);
@@ -27,6 +44,7 @@ pub fn run() {
       commands::cash_session::cash_session_close,
       commands::cash_session::cash_sessions_list_closed,
       commands::cash_session::cash_session_open_for_historique,
+      commands::cash_session::cash_session_live_totals,
       commands::catalog::list_catalog,
       commands::catalog_csv::catalog_export_csv_to_documents,
       commands::catalog_csv::catalog_import_csv_pick_dialog,
@@ -74,6 +92,7 @@ pub fn run() {
       commands::users::change_user_name,
       commands::users::verify_any_gerant_pin,
       commands::users::update_user_avatar,
+      commands::screenshot::screenshot_save_main_window,
       commands::system::relaunch
     ])
     .run(tauri::generate_context!())

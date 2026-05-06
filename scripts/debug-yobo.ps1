@@ -1,7 +1,7 @@
 #requires -Version 5.1
 <#
 .SYNOPSIS
-  YOBO Gestion — lance debug-yobo.mjs avec contexte PowerShell (versions, env, transcription).
+  YOBO — lance debug-yobo.mjs avec contexte PowerShell (versions, env, transcription).
 
 .DESCRIPTION
   Affiche un résumé lisible (OS, chemins, outils, variables Rust/WebView2) puis exécute le script Node.
@@ -57,7 +57,7 @@ function Show-YoboPreamble {
   Write-Host ""
   Write-YoboBannerLine $sep
   $modeSuffix = if ($Full) { ' + FULL' } else { '' }
-  Write-YoboBannerLine ('  YOBO Gestion - debug-yobo.ps1  |  mode=' + $arg + $modeSuffix)
+  Write-YoboBannerLine ('  YOBO - debug-yobo.ps1  |  mode=' + $arg + $modeSuffix)
   Write-YoboBannerLine $sep
   Write-Host "  Racine projet : " -NoNewline -ForegroundColor DarkGray
   Write-Host $root -ForegroundColor White

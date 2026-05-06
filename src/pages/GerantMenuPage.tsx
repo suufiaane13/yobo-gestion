@@ -5,14 +5,20 @@ import { YoboPagination } from '../components/YoboPagination'
 import { EmojiPicker } from '../components/EmojiPicker'
 import { YoboAlphaInput, YoboNumericInput } from '../components/YoboKeyboardInputs'
 import { DEFAULT_CATEGORY_EMOJI, DEFAULT_PRODUCT_EMOJI } from '../data/yoboEmojis'
-import { YOBO_SINGLE_PRICE_KEY, isSinglePriceOnlySizes, sortSizePairsForDisplay } from '../lib/productSizes'
+import {
+  YOBO_SINGLE_PRICE_KEY,
+  formatSizeLabelForDisplay,
+  isSinglePriceOnlySizes,
+  sortSizePairsForDisplay,
+} from '../lib/productSizes'
 import { exportCatalogCsvToDocuments, importCatalogCsvPickDialog } from '../lib/catalogCsv'
 import { isTauriRuntime } from '../lib/isTauriRuntime'
 import {
-  isValidYoboMultiSizeProgress,
-  normalizeStdSizeLabel,
+  sizeLabelDedupKey,
   sortSizeEntriesByStdOrder,
-  validateYoboMultiSizeLabelsFinal,
+  trimSizeLabel,
+  validateYoboMultiSizeLabels,
+  YOBO_SIZE_QUICK_PRESETS,
 } from '../lib/yoboSizeTemplates'
 import { clampPage, getTotalPages, paginateSlice } from '../lib/pagination'
 import { logDevError, userFacingErrorMessage } from '../lib/userFacingError'
@@ -51,7 +57,7 @@ export function GerantMenuPage({
   const [newProductName, setNewProductName] = useState('')
   const [newProductEmoji, setNewProductEmoji] = useState(DEFAULT_PRODUCT_EMOJI)
   const [newProductCategoryId, setNewProductCategoryId] = useState<number | null>(null)
-  const [newProductSizeLabel, setNewProductSizeLabel] = useState('S')
+  const [newProductSizeLabel, setNewProductSizeLabel] = useState('P')
   const [newProductSizePrice, setNewProductSizePrice] = useState('')
   const [newProductSinglePrice, setNewProductSinglePrice] = useState(false)
   const [newProductSizeEntries, setNewProductSizeEntries] = useState<SizeEntry[]>([])
@@ -60,7 +66,7 @@ export function GerantMenuPage({
   const [editProductEmoji, setEditProductEmoji] = useState('')
   const [editProductCategoryId, setEditProductCategoryId] = useState<number | null>(null)
   const [editProductSizeEntries, setEditProductSizeEntries] = useState<SizeEntry[]>([])
-  const [editProductSizeLabel, setEditProductSizeLabel] = useState('S')
+  const [editProductSizeLabel, setEditProductSizeLabel] = useState('P')
   const [editProductSizePrice, setEditProductSizePrice] = useState('')
   const [editProductSinglePrice, setEditProductSinglePrice] = useState(false)
   const [newCategoryLabel, setNewCategoryLabel] = useState('')
@@ -134,9 +140,9 @@ export function GerantMenuPage({
 
   function addNewSizeEntry() {
     if (newProductSinglePrice) return
-    const normalized = normalizeStdSizeLabel(newProductSizeLabel)
+    const trimmed = trimSizeLabel(newProductSizeLabel)
     const price = Number(newProductSizePrice.replace(',', '.'))
-    if (!normalized) {
+    if (!trimmed) {
       setError(client.val.menuSizeLabel)
       return
     }
@@ -144,15 +150,11 @@ export function GerantMenuPage({
       setError(client.val.menuPriceSize)
       return
     }
+    const dk = sizeLabelDedupKey(trimmed)
     const next = [
-      ...newProductSizeEntries.filter((s) => normalizeStdSizeLabel(s.label) !== normalized),
-      { label: normalized, price },
+      ...newProductSizeEntries.filter((s) => sizeLabelDedupKey(s.label) !== dk),
+      { label: trimmed, price },
     ]
-    const labelSet = new Set(next.map((s) => normalizeStdSizeLabel(s.label)!))
-    if (!isValidYoboMultiSizeProgress(labelSet)) {
-      setError(client.val.menuSizeOrderNew)
-      return
-    }
     setNewProductSizeEntries(sortSizeEntriesByStdOrder(next))
     setNewProductSizeLabel('')
     setNewProductSizePrice('')
@@ -172,16 +174,16 @@ export function GerantMenuPage({
     setEditProductSizeEntries(
       sortSizePairsForDisplay(Object.entries(p.sizes)).map(([label, price]) => ({ label, price })),
     )
-    setEditProductSizeLabel('S')
+    setEditProductSizeLabel('P')
     setEditProductSizePrice('')
     setError(null)
   }
 
   function addEditProductSizeEntry() {
     if (editProductSinglePrice) return
-    const normalized = normalizeStdSizeLabel(editProductSizeLabel)
+    const trimmed = trimSizeLabel(editProductSizeLabel)
     const price = Number(editProductSizePrice.replace(',', '.'))
-    if (!normalized) {
+    if (!trimmed) {
       setError(client.val.menuSizeLabel)
       return
     }
@@ -189,15 +191,11 @@ export function GerantMenuPage({
       setError(client.val.menuPriceSize)
       return
     }
+    const dk = sizeLabelDedupKey(trimmed)
     const next = [
-      ...editProductSizeEntries.filter((s) => normalizeStdSizeLabel(s.label) !== normalized),
-      { label: normalized, price },
+      ...editProductSizeEntries.filter((s) => sizeLabelDedupKey(s.label) !== dk),
+      { label: trimmed, price },
     ]
-    const labelSet = new Set(next.map((s) => normalizeStdSizeLabel(s.label)!))
-    if (!isValidYoboMultiSizeProgress(labelSet)) {
-      setError(client.val.menuSizeOrderEdit)
-      return
-    }
     setEditProductSizeEntries(sortSizeEntriesByStdOrder(next))
     setEditProductSizeLabel('')
     setEditProductSizePrice('')
@@ -228,13 +226,13 @@ export function GerantMenuPage({
         setError(client.val.menuAddOneSize)
         return
       }
-      const finalErr = validateYoboMultiSizeLabelsFinal(editProductSizeEntries.map((s) => s.label))
+      const finalErr = validateYoboMultiSizeLabels(editProductSizeEntries.map((s) => s.label))
       if (finalErr) {
         setError(finalErr)
         return
       }
       const sorted = sortSizeEntriesByStdOrder(editProductSizeEntries)
-      sizesParsed = Object.fromEntries(sorted.map((s) => [normalizeStdSizeLabel(s.label)!, s.price]))
+      sizesParsed = Object.fromEntries(sorted.map((s) => [s.label, s.price]))
     }
     try {
       await invoke('update_product', {
@@ -315,13 +313,13 @@ export function GerantMenuPage({
         setError(client.val.menuAddOneSize)
         return
       }
-      const finalErr = validateYoboMultiSizeLabelsFinal(newProductSizeEntries.map((s) => s.label))
+      const finalErr = validateYoboMultiSizeLabels(newProductSizeEntries.map((s) => s.label))
       if (finalErr) {
         setError(finalErr)
         return
       }
       const sorted = sortSizeEntriesByStdOrder(newProductSizeEntries)
-      sizesParsed = Object.fromEntries(sorted.map((s) => [normalizeStdSizeLabel(s.label)!, s.price]))
+      sizesParsed = Object.fromEntries(sorted.map((s) => [s.label, s.price]))
     }
 
     try {
@@ -339,7 +337,7 @@ export function GerantMenuPage({
       setNewProductEmoji(DEFAULT_PRODUCT_EMOJI)
       setNewProductSinglePrice(false)
       setNewProductSizeEntries([])
-      setNewProductSizeLabel('S')
+      setNewProductSizeLabel('P')
       setNewProductSizePrice('')
       setError(null)
       await loadMenuProducts()
@@ -822,7 +820,7 @@ export function GerantMenuPage({
                                         {entries.map(([label, price]) => (
                                           <div key={label || '__u'} className="flex items-center gap-1.5 bg-[var(--card)] px-2.5 py-1 rounded-lg border border-[var(--border)] shadow-sm group-hover:border-[var(--accent-border)]/30 transition-colors">
                                             <span className="text-[8px] font-black uppercase text-[var(--muted)]">
-                                              {label}
+                                              {formatSizeLabelForDisplay(label)}
                                             </span>
                                             <span className="text-[12px] font-black tabular-nums text-[var(--accent)] drop-shadow-[0_0_8px_var(--accent-bg)]">
                                               {price} <span className="text-[8px] font-bold opacity-80">MAD</span>
@@ -1031,29 +1029,31 @@ export function GerantMenuPage({
               ))}
             </select>
           </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-bold text-[var(--text-h)]" htmlFor="new-product-name">
-              Nom produit
-            </label>
-            <YoboAlphaInput
-              id="new-product-name"
-              value={newProductName}
-              onValueChange={setNewProductName}
-              className="yobo-input w-full"
-              placeholder="Ex. Margherita"
-              autoComplete="off"
-            />
-          </div>
-          <div>
-            <span className="mb-1.5 block text-xs font-bold text-[var(--text-h)]">Emoji</span>
-            <EmojiPicker
-              hideLabel
-              formRow
-              symbolOnly
-              label="Emoji du produit"
-              value={newProductEmoji}
-              onChange={setNewProductEmoji}
-            />
+          <div className="flex flex-wrap gap-3 items-start">
+            <div className="min-w-0 flex-1 basis-[min(100%,14rem)]">
+              <label className="mb-1.5 block text-xs font-bold text-[var(--text-h)]" htmlFor="new-product-name">
+                Nom produit
+              </label>
+              <YoboAlphaInput
+                id="new-product-name"
+                value={newProductName}
+                onValueChange={setNewProductName}
+                className="yobo-input w-full"
+                placeholder="Ex. Margherita"
+                autoComplete="off"
+              />
+            </div>
+            <div className="flex shrink-0 flex-col">
+              <span className="mb-1.5 block text-xs font-bold text-[var(--text-h)]">Emoji</span>
+              <EmojiPicker
+                hideLabel
+                formRow
+                symbolOnly
+                label="Emoji du produit"
+                value={newProductEmoji}
+                onChange={setNewProductEmoji}
+              />
+            </div>
           </div>
           <div className="space-y-4">
             <div className="flex items-center justify-between px-1">
@@ -1069,7 +1069,7 @@ export function GerantMenuPage({
                       setNewProductSinglePrice(!withSizes)
                       if (withSizes) {
                         setNewProductSizeEntries([])
-                        setNewProductSizeLabel('S')
+                        setNewProductSizeLabel('P')
                         setNewProductSizePrice('')
                       } else {
                         const fromMulti = Number(newProductSizePrice.replace(',', '.')) || newProductSizeEntries[0]?.price || 50
@@ -1113,15 +1113,17 @@ export function GerantMenuPage({
               ) : (
                 <div className="space-y-5">
                   <div className="space-y-2.5">
-                    <span className="block text-[10px] font-black uppercase tracking-widest text-[var(--muted)]">Presets de taille</span>
+                    <span className="block text-[10px] font-black uppercase tracking-widest text-[var(--muted)]">
+                      Raccourcis (saisie libre à côté)
+                    </span>
                     <div className="flex flex-wrap gap-2">
-                      {['S', 'M', 'L', 'XL'].map((s) => (
+                      {YOBO_SIZE_QUICK_PRESETS.map((s) => (
                         <button
                           key={s}
                           type="button"
                           onClick={() => setNewProductSizeLabel(s)}
                           className={`px-4 py-1.5 rounded-xl border text-[11px] font-black transition-all ${
-                            newProductSizeLabel === s 
+                            sizeLabelDedupKey(newProductSizeLabel) === sizeLabelDedupKey(s)
                             ? 'bg-[var(--accent)] border-[var(--accent)] text-[#4d2600] shadow-lg shadow-[var(--accent)]/20' 
                             : 'bg-[var(--card)] border-[var(--border)] text-[var(--text-h)] hover:border-[var(--accent-border)]'
                           }`}
@@ -1172,7 +1174,9 @@ export function GerantMenuPage({
                               key={`${entry.label}-${idx}`}
                               className="flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-xl bg-[var(--card)] border border-[var(--border)] group animate-in zoom-in-95 duration-200"
                             >
-                              <span className="text-[10px] font-black text-[var(--muted)]">{entry.label}</span>
+                              <span className="text-[10px] font-black text-[var(--muted)]">
+                                {formatSizeLabelForDisplay(entry.label)}
+                              </span>
                               <span className="text-xs font-black text-[var(--accent)]">{entry.price} <span className="text-[8px] opacity-60">MAD</span></span>
                               <button
                                 type="button"
@@ -1252,30 +1256,32 @@ export function GerantMenuPage({
                     ))}
                   </select>
                 </div>
-                <div>
-                  <label className="yobo-modal-label" htmlFor="edit-prod-name">
-                    Nom
-                  </label>
-                  <YoboAlphaInput
-                    id="edit-prod-name"
-                    className="yobo-modal-field"
-                    value={editProductName}
-                    onValueChange={setEditProductName}
-                    autoComplete="off"
-                  />
-                </div>
-                <div>
-                  <span className="yobo-modal-label">Emoji</span>
-                  <EmojiPicker
-                    id="edit-prod-emoji"
-                    hideLabel
-                    formRow
-                    symbolOnly
-                    label="Emoji du produit"
-                    value={editProductEmoji}
-                    onChange={setEditProductEmoji}
-                    alignPanel="end"
-                  />
+                <div className="flex flex-wrap gap-3 items-start">
+                  <div className="min-w-0 flex-1 basis-[min(100%,14rem)]">
+                    <label className="yobo-modal-label" htmlFor="edit-prod-name">
+                      Nom
+                    </label>
+                    <YoboAlphaInput
+                      id="edit-prod-name"
+                      className="yobo-modal-field"
+                      value={editProductName}
+                      onValueChange={setEditProductName}
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div className="flex shrink-0 flex-col">
+                    <span className="yobo-modal-label">Emoji</span>
+                    <EmojiPicker
+                      id="edit-prod-emoji"
+                      hideLabel
+                      formRow
+                      symbolOnly
+                      label="Emoji du produit"
+                      value={editProductEmoji}
+                      onChange={setEditProductEmoji}
+                      alignPanel="end"
+                    />
+                  </div>
                 </div>
               </div>
             </section>
@@ -1294,7 +1300,7 @@ export function GerantMenuPage({
                         setEditProductSinglePrice(!withSizes)
                         if (withSizes) {
                           setEditProductSizeEntries([])
-                          setEditProductSizeLabel('S')
+                          setEditProductSizeLabel('P')
                           setEditProductSizePrice('')
                         } else {
                           const p = editProductSizeEntries[0]?.price ?? (Number(editProductSizePrice.replace(',', '.')) || 50)
@@ -1338,15 +1344,17 @@ export function GerantMenuPage({
                 ) : (
                   <div className="space-y-5">
                     <div className="space-y-2.5">
-                      <span className="block text-[10px] font-black uppercase tracking-widest text-[var(--muted)]">Presets de taille</span>
+                      <span className="block text-[10px] font-black uppercase tracking-widest text-[var(--muted)]">
+                        Raccourcis (saisie libre à côté)
+                      </span>
                       <div className="flex flex-wrap gap-2">
-                        {['S', 'M', 'L', 'XL'].map((s) => (
+                        {YOBO_SIZE_QUICK_PRESETS.map((s) => (
                           <button
                             key={s}
                             type="button"
                             onClick={() => setEditProductSizeLabel(s)}
                             className={`px-4 py-1.5 rounded-xl border text-[11px] font-black transition-all ${
-                              editProductSizeLabel === s 
+                              sizeLabelDedupKey(editProductSizeLabel) === sizeLabelDedupKey(s)
                               ? 'bg-[var(--accent)] border-[var(--accent)] text-[#4d2600] shadow-lg shadow-[var(--accent)]/20' 
                               : 'bg-[var(--card)] border-[var(--border)] text-[var(--text-h)] hover:border-[var(--accent-border)]'
                             }`}
@@ -1397,7 +1405,9 @@ export function GerantMenuPage({
                               key={`${entry.label}-${idx}`}
                               className="flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-xl bg-[var(--card)] border border-[var(--border)] group animate-in zoom-in-95 duration-200"
                             >
-                              <span className="text-[10px] font-black text-[var(--muted)]">{entry.label}</span>
+                              <span className="text-[10px] font-black text-[var(--muted)]">
+                                {formatSizeLabelForDisplay(entry.label)}
+                              </span>
                               <span className="text-xs font-black text-[var(--accent)]">{entry.price} <span className="text-[8px] opacity-60">MAD</span></span>
                               <button
                                 type="button"

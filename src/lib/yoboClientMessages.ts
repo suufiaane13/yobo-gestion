@@ -15,8 +15,10 @@ export const client = {
     dbPurgeDone: 'Données effacées. Menu rétabli au jeu d’usine ; compte gérant conservé.',
     printWindow:
       'Fenêtre d’impression ouverte. Pour enregistrer en PDF, choisis « Enregistrer au format PDF ».',
+    screenshotSaved: 'Capture enregistrée sur ton ordinateur.',
     ticketPrintStarted: 'Impression du ticket lancée.',
-    orderCancelled: 'Commande annulée.',
+    orderValidated: 'Ticket imprimé avec succès !',
+    orderCancelled: 'Ticket annulé.',
   },
   warn: {
     ticketPrint: 'Le ticket ne s’est pas imprimé. Vérifie l’imprimante ou réessaie.',
@@ -81,12 +83,8 @@ export const client = {
     pinLength: 'Le code PIN doit avoir entre 4 et 6 chiffres.',
     pinNewRequired: 'Indique le nouveau code PIN deux fois.',
     pinMismatch: 'Les deux nouveaux codes ne sont pas identiques.',
-    menuSizeLabel: 'Choisis une taille : S, M, L ou XL.',
+    menuSizeLabel: 'Indique un libellé de taille (lettre, mot ou texte libre).',
     menuPriceSize: 'Indique un prix valide pour cette taille.',
-    menuSizeOrderNew:
-      'Cette taille ne convient pas. Exemples valides : S et L, ou S M L, ou S M L XL (sans sauter d’étape).',
-    menuSizeOrderEdit:
-      'Cette taille ne convient pas. Exemples valides : S et L, ou S M L, ou S M L XL (sans sauter d’étape).',
     menuNameEmoji: 'Indique le nom du plat et un emoji.',
     menuPriceDish: 'Indique un prix correct pour ce plat.',
     menuAddOneSize: 'Ajoute au moins une taille.',
@@ -97,8 +95,6 @@ export const client = {
     profilePinModal: 'Indique ton code PIN (4 à 6 chiffres).',
     orderCancelReason: 'Indique la raison de l’annulation.',
     orderTypeRequired: 'Choisis le type de commande : sur place, à emporter ou livraison.',
-    menuSizeAllowedOnly: 'Utilise uniquement les tailles S, M, L ou XL.',
     menuSizeDup: 'Ne saisis pas deux fois la même taille.',
-    menuSizeCombo: 'Combinaisons possibles : S et L · ou S, M et L · ou S, M, L et XL.',
   },
 } as const

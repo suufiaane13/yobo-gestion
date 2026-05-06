@@ -50,9 +50,9 @@ export async function loadImageToEscposBitmap(url: string, maxWidth: number = 25
           const b = pixels[idx + 2]
           const a = pixels[idx + 3]
 
-          // Si le pixel n'est pas transparent et n'est pas proche du blanc, on le met en noir
-          const grayscale = a < 128 ? 255 : (r + g + b) / 3
-          const isBlack = grayscale < 230 // Seuil agressif pour l'orange
+          // Seuil de conversion : tout ce qui est plus sombre que 128 devient noir
+          const grayscale = a < 10 ? 255 : (r + g + b) / 3
+          const isBlack = grayscale < 128
 
           if (isBlack) {
             const byteIdx = y * bytesPerRow + Math.floor(x / 8)

@@ -29,8 +29,10 @@ pub fn open_db_file() -> Result<Connection, String> {
     .pragma_update(None, "journal_mode", "WAL")
     .map_err(|e| e.to_string())?;
   conn
-    .execute_batch("PRAGMA foreign_keys = ON; PRAGMA synchronous = NORMAL;")
+    .execute_batch("PRAGMA foreign_keys = ON; PRAGMA synchronous = NORMAL; PRAGMA auto_vacuum = INCREMENTAL;")
     .map_err(|e| e.to_string())?;
+  // SQLite recommande de lancer PRAGMA optimize régulièrement.
+  let _ = conn.execute("PRAGMA optimize;", []);
   Ok(conn)
 }
 
@@ -260,8 +262,9 @@ pub fn ensure_default_gerant(conn: &Connection) -> Result<(), String> {
 
 pub fn ensure_default_categories(conn: &Connection) -> Result<(), String> {
   // Seed du catalogue "usine" (catégories + produits) pour une base neuve
-  // ou après reset.
-  const MENU_SEED_VERSION: &str = "yobo_menu_v1_2026_04_09_gratine";
+  // ou après reset. Clés `sizes` JSON alignées sur `menuFallback.ts` : S (une taille),
+  // L/XL (tacos), P/M/G (pizzas), S+L (eau), etc.
+  const MENU_SEED_VERSION: &str = "yobo_menu_v2_2026_05_align_menu_fallback";
 
   // Si l'utilisateur a explicitement vidé le menu via Profil → suppression ciblée,
   // on n'auto-seed pas tant qu'il n'a pas demandé un reset vers le seed.
@@ -361,16 +364,16 @@ pub fn ensure_default_categories(conn: &Connection) -> Result<(), String> {
     };
 
   // 🥪 PAIN MAISON
-  insert_product("pain_maison", "🍗", "Poulet Tex-Mex", json!({ "": 35 }))?;
-  insert_product("pain_maison", "🥙", "Marocain", json!({ "": 37 }))?;
-  insert_product("pain_maison", "🦐", "Fruits de Mer", json!({ "": 40 }))?;
-  insert_product("pain_maison", "🥖", "Yobo", json!({ "": 42 }))?;
+  insert_product("pain_maison", "🍗", "Poulet Tex-Mex", json!({ "S": 35 }))?;
+  insert_product("pain_maison", "🥙", "Marocain", json!({ "S": 37 }))?;
+  insert_product("pain_maison", "🦐", "Fruits de Mer", json!({ "S": 40 }))?;
+  insert_product("pain_maison", "🥖", "Yobo", json!({ "S": 42 }))?;
 
   // 🥟 CALZONE
-  insert_product("calzone", "🍗", "Poulet", json!({ "": 35 }))?;
-  insert_product("calzone", "🥩", "Viande Hachée", json!({ "": 40 }))?;
-  insert_product("calzone", "🥟", "Mixte", json!({ "": 40 }))?;
-  insert_product("calzone", "🦐", "Fruits de Mer", json!({ "": 45 }))?;
+  insert_product("calzone", "🍗", "Poulet", json!({ "S": 35 }))?;
+  insert_product("calzone", "🥩", "Viande Hachée", json!({ "S": 40 }))?;
+  insert_product("calzone", "🥟", "Mixte", json!({ "S": 40 }))?;
+  insert_product("calzone", "🦐", "Fruits de Mer", json!({ "S": 45 }))?;
 
   // 🌮 TACOS (L / XL)
   insert_product("tacos", "🍗", "Poulet", json!({ "L": 30, "XL": 45 }))?;
@@ -381,130 +384,130 @@ pub fn ensure_default_categories(conn: &Connection) -> Result<(), String> {
   insert_product("tacos", "🥩", "Viande Hachée", json!({ "L": 35, "XL": 50 }))?;
   insert_product("tacos", "🦐", "Fruits de Mer", json!({ "L": 40, "XL": 55 }))?;
 
-  // 🥪 PANINI
-  insert_product("panini", "🍗", "Poulet", json!({ "": 25 }))?;
-  insert_product("panini", "🍖", "Dinde", json!({ "": 25 }))?;
-  insert_product("panini", "🐟", "Thon", json!({ "": 25 }))?;
-  insert_product("panini", "🥪", "Mixte", json!({ "": 25 }))?;
-  insert_product("panini", "🥩", "Viande Hachée", json!({ "": 27 }))?;
-  insert_product("panini", "🧀", "4 Fromages", json!({ "": 27 }))?;
-  insert_product("panini", "🦐", "Fruits de Mer", json!({ "": 30 }))?;
+  // 🥪 PANINI (aligné menuFallback.ts)
+  insert_product("panini", "🍗", "Poulet", json!({ "S": 25 }))?;
+  insert_product("panini", "🍖", "Dinde", json!({ "S": 25 }))?;
+  insert_product("panini", "🐟", "Thon", json!({ "S": 25 }))?;
+  insert_product("panini", "🧀", "4 Fromages", json!({ "S": 25 }))?;
+  insert_product("panini", "🥪", "Mixte", json!({ "S": 27 }))?;
+  insert_product("panini", "🥩", "Viande Hachée", json!({ "S": 27 }))?;
+  insert_product("panini", "🦐", "Fruits de Mer", json!({ "S": 30 }))?;
 
   // 🍔 BURGER
-  insert_product("burger", "🍔", "American Burger", json!({ "": 30 }))?;
-  insert_product("burger", "🍔", "Chicken Burger", json!({ "": 30 }))?;
-  insert_product("burger", "🍔", "Chees Burger", json!({ "": 30 }))?;
-  insert_product("burger", "🍔", "Big Burger", json!({ "": 37 }))?;
-  insert_product("burger", "🍔", "Burger Yobo", json!({ "": 40 }))?;
+  insert_product("burger", "🍔", "American Burger", json!({ "S": 30 }))?;
+  insert_product("burger", "🍔", "Chicken Burger", json!({ "S": 30 }))?;
+  insert_product("burger", "🍔", "Chees Burger", json!({ "S": 30 }))?;
+  insert_product("burger", "🍔", "Big Burger", json!({ "S": 37 }))?;
+  insert_product("burger", "🍔", "Burger Yobo", json!({ "S": 40 }))?;
 
-  // 🍝 PASTICCIO
-  insert_product("pasticcio", "🍗", "Poulet", json!({ "": 30 }))?;
-  insert_product("pasticcio", "🍖", "Dinde", json!({ "": 30 }))?;
-  insert_product("pasticcio", "🦐", "Fruits de Mer", json!({ "": 45 }))?;
-  insert_product("pasticcio", "🍗", "Nuggets", json!({ "": 35 }))?;
-  insert_product("pasticcio", "🍝", "Mixte", json!({ "": 35 }))?;
-  insert_product("pasticcio", "🧀", "Cordon Bleu", json!({ "": 37 }))?;
-  insert_product("pasticcio", "🥩", "Viande Hachée", json!({ "": 35 }))?;
+  // 🍝 PASTICCIO (aligné menuFallback.ts)
+  insert_product("pasticcio", "🍗", "Poulet", json!({ "S": 30 }))?;
+  insert_product("pasticcio", "🍖", "Dinde", json!({ "S": 30 }))?;
+  insert_product("pasticcio", "🍗", "Nuggets", json!({ "S": 35 }))?;
+  insert_product("pasticcio", "🍝", "Mixte", json!({ "S": 35 }))?;
+  insert_product("pasticcio", "🥩", "Viande Hachée", json!({ "S": 35 }))?;
+  insert_product("pasticcio", "🧀", "Cordon Bleu", json!({ "S": 37 }))?;
+  insert_product("pasticcio", "🦐", "Fruits de Mer", json!({ "S": 45 }))?;
 
-  // 🔥 SANDWICHS
-  insert_product("sandwichs", "🥖", "Simple", json!({ "": 12 }))?;
-  insert_product("sandwichs", "🍓", "Avec fruits", json!({ "": 15 }))?;
-  insert_product("sandwichs", "🍗", "Poulet", json!({ "": 20 }))?;
-  insert_product("sandwichs", "🍖", "Dinde", json!({ "": 20 }))?;
-  insert_product("sandwichs", "🥩", "Viande Hachée", json!({ "": 20 }))?;
-  insert_product("sandwichs", "🥪", "Mixte", json!({ "": 30 }))?;
-  insert_product("sandwichs", "🍗", "Nuggets", json!({ "": 30 }))?;
-  insert_product("sandwichs", "🧀", "Cordon Bleu", json!({ "": 30 }))?;
-  insert_product("sandwichs", "🦐", "Fruits de Mer", json!({ "": 40 }))?;
+  // 🔥 SANDWICHS (aligné menuFallback.ts)
+  insert_product("sandwichs", "🥖", "Hollandais", json!({ "S": 12 }))?;
+  insert_product("sandwichs", "🍓", "Hollandais Avec fruits", json!({ "S": 15 }))?;
+  insert_product("sandwichs", "🍗", "Poulet", json!({ "S": 20 }))?;
+  insert_product("sandwichs", "🍖", "Dinde", json!({ "S": 20 }))?;
+  insert_product("sandwichs", "🥩", "Viande Hachée", json!({ "S": 20 }))?;
+  insert_product("sandwichs", "🥪", "Mixte", json!({ "S": 30 }))?;
+  insert_product("sandwichs", "🍗", "Nuggets", json!({ "S": 30 }))?;
+  insert_product("sandwichs", "🧀", "Cordon Bleu", json!({ "S": 30 }))?;
+  insert_product("sandwichs", "🦐", "Fruits de Mer", json!({ "S": 40 }))?;
 
   // 👶 KIDS — 30 DH
-  insert_product("kids", "👶", "Cheeseburger + Frites + Boisson", json!({ "": 30 }))?;
-  insert_product("kids", "👶", "6 Nuggets + Frites + Boisson", json!({ "": 30 }))?;
-  insert_product("kids", "👶", "Sandwich Poulet Kids + Frites + Boisson", json!({ "": 30 }))?;
+  insert_product("kids", "👶", "Cheeseburger + Frites + Boisson", json!({ "S": 30 }))?;
+  insert_product("kids", "👶", "6 Nuggets + Frites + Boisson", json!({ "S": 30 }))?;
+  insert_product("kids", "👶", "Sandwich Poulet Kids + Frites + Boisson", json!({ "S": 30 }))?;
 
-  // 🍕 PIZZA
-  insert_product("pizza", "🍕", "Margherita", json!({ "S": 25 }))?;
-  insert_product("pizza", "🍕", "Viande Hachée", json!({ "S": 30, "M": 45, "L": 60 }))?;
-  insert_product("pizza", "🍕", "Poulet", json!({ "S": 30, "M": 45, "L": 60 }))?;
-  insert_product("pizza", "🍕", "Dinde", json!({ "S": 30, "M": 45, "L": 60 }))?;
-  insert_product("pizza", "🍕", "Dinde Fumée", json!({ "S": 35, "M": 45, "L": 60 }))?;
-  insert_product("pizza", "🍕", "Thon", json!({ "S": 30, "M": 45, "L": 60 }))?;
-  insert_product("pizza", "🦐", "Fruits de Mer", json!({ "S": 40, "M": 55, "L": 75 }))?;
-  insert_product("pizza", "🥬", "Végétarienne", json!({ "S": 40, "M": 45, "L": 60 }))?;
-  insert_product("pizza", "🍕", "4 Saisons", json!({ "S": 30, "M": 55, "L": 75 }))?;
-  insert_product("pizza", "🧀", "4 Fromages", json!({ "S": 35, "M": 45, "L": 65 }))?;
-  insert_product("pizza", "🍕", "Mixte", json!({ "S": 40, "M": 50, "L": 65 }))?;
-  insert_product("pizza", "🌾", "Fermière", json!({ "S": 40, "M": 50, "L": 65 }))?;
-  insert_product("pizza", "🥖", "Yobo", json!({ "S": 40, "M": 50, "L": 70 }))?;
+  // 🍕 PIZZA (P / M / G — aligné menuFallback.ts)
+  insert_product("pizza", "🍕", "Margherita", json!({ "P": 25, "M": 35, "G": 50 }))?;
+  insert_product("pizza", "🍕", "Viande Hachée", json!({ "P": 30, "M": 45, "G": 60 }))?;
+  insert_product("pizza", "🍕", "Poulet", json!({ "P": 30, "M": 45, "G": 60 }))?;
+  insert_product("pizza", "🍕", "Dinde", json!({ "P": 30, "M": 45, "G": 60 }))?;
+  insert_product("pizza", "🍕", "Dinde Fumée", json!({ "P": 35, "M": 45, "G": 60 }))?;
+  insert_product("pizza", "🍕", "Thon", json!({ "P": 30, "M": 45, "G": 60 }))?;
+  insert_product("pizza", "🦐", "Fruits de Mer", json!({ "P": 40, "M": 55, "G": 75 }))?;
+  insert_product("pizza", "🥬", "Végétarienne", json!({ "P": 40, "M": 45, "G": 60 }))?;
+  insert_product("pizza", "🍕", "4 Saisons", json!({ "P": 30, "M": 55, "G": 75 }))?;
+  insert_product("pizza", "🧀", "4 Fromages", json!({ "P": 35, "M": 45, "G": 65 }))?;
+  insert_product("pizza", "🍕", "Mixte", json!({ "P": 40, "M": 50, "G": 65 }))?;
+  insert_product("pizza", "🌾", "Fermière", json!({ "P": 40, "M": 50, "G": 65 }))?;
+  insert_product("pizza", "🥖", "Yobo", json!({ "P": 40, "M": 50, "G": 70 }))?;
 
   // 🍝 PÂTES
-  insert_product("pates", "🍝", "All'arrabbiata", json!({ "": 37 }))?;
-  insert_product("pates", "🥓", "Carbonara", json!({ "": 45 }))?;
-  insert_product("pates", "🐟", "Thon", json!({ "": 45 }))?;
-  insert_product("pates", "🧄", "Alfredo", json!({ "": 45 }))?;
-  insert_product("pates", "🍅", "Bolognaise", json!({ "": 48 }))?;
-  insert_product("pates", "🧀", "4 Fromages", json!({ "": 48 }))?;
-  insert_product("pates", "🦐", "Fruits de Mer", json!({ "": 50 }))?;
-  insert_product("pates", "⭐", "Trio Yobo", json!({ "": 60 }))?;
+  insert_product("pates", "🍝", "All'arrabbiata", json!({ "S": 37 }))?;
+  insert_product("pates", "🥓", "Carbonara", json!({ "S": 45 }))?;
+  insert_product("pates", "🐟", "Thon", json!({ "S": 45 }))?;
+  insert_product("pates", "🧄", "Alfredo", json!({ "S": 45 }))?;
+  insert_product("pates", "🍅", "Bolognaise", json!({ "S": 48 }))?;
+  insert_product("pates", "🧀", "4 Fromages", json!({ "S": 48 }))?;
+  insert_product("pates", "🦐", "Fruits de Mer", json!({ "S": 50 }))?;
+  insert_product("pates", "⭐", "Trio Yobo", json!({ "S": 60 }))?;
 
   // 🍚 RISOTTO
-  insert_product("risotto", "🍚", "Risotto Végétarien", json!({ "": 42 }))?;
-  insert_product("risotto", "🍗", "Risotto Poulet Champignons", json!({ "": 45 }))?;
-  insert_product("risotto", "🦐", "Risotto Fruits de Mer", json!({ "": 55 }))?;
+  insert_product("risotto", "🍚", "Risotto Végétarien", json!({ "S": 42 }))?;
+  insert_product("risotto", "🍗", "Risotto Poulet Champignons", json!({ "S": 45 }))?;
+  insert_product("risotto", "🦐", "Risotto Fruits de Mer", json!({ "S": 55 }))?;
 
   // 🥗 ENTRÉES
-  insert_product("entrees", "🥗", "Salade César au poulet", json!({ "": 37 }))?;
-  insert_product("entrees", "🥗", "Salade Marocaine", json!({ "": 22 }))?;
-  insert_product("entrees", "🍆", "Mille-feuille d'aubergine", json!({ "": 30 }))?;
-  insert_product("entrees", "🍄", "Gratin poulet aux champignons", json!({ "": 35 }))?;
-  insert_product("entrees", "🦐", "Gratin fruits de mer", json!({ "": 40 }))?;
-  insert_product("entrees", "🦐", "Crevette pil pil", json!({ "": 47 }))?;
-  insert_product("entrees", "🍗", "Plat nuggets 6 pièces + frites", json!({ "": 30 }))?;
+  insert_product("entrees", "🥗", "Salade César au poulet", json!({ "S": 37 }))?;
+  insert_product("entrees", "🥗", "Salade Marocaine", json!({ "S": 22 }))?;
+  insert_product("entrees", "🍆", "Mille-feuille d'aubergine", json!({ "S": 30 }))?;
+  insert_product("entrees", "🍄", "Gratin poulet aux champignons", json!({ "S": 35 }))?;
+  insert_product("entrees", "🦐", "Gratin fruits de mer", json!({ "S": 40 }))?;
+  insert_product("entrees", "🦐", "Crevette pil pil", json!({ "S": 47 }))?;
+  insert_product("entrees", "🍗", "Plat nuggets 6 pièces + frites", json!({ "S": 30 }))?;
 
   // 🍽️ PLATS
-  insert_product("plats", "🥩", "Brochettes viande hachée grillées", json!({ "": 50 }))?;
-  insert_product("plats", "🍗", "Brochettes poulet à la coriandre", json!({ "": 48 }))?;
-  insert_product("plats", "🍢", "Brochettes mixtes", json!({ "": 51 }))?;
-  insert_product("plats", "🍄", "Émincé poulet aux champignons", json!({ "": 50 }))?;
-  insert_product("plats", "🍗", "Escalope Milanaise", json!({ "": 49 }))?;
-  insert_product("plats", "🍳", "Tajine viande hachée - œufs", json!({ "": 37 }))?;
+  insert_product("plats", "🥩", "Brochettes viande hachée grillées", json!({ "S": 50 }))?;
+  insert_product("plats", "🍗", "Brochettes poulet à la coriandre", json!({ "S": 48 }))?;
+  insert_product("plats", "🍢", "Brochettes mixtes", json!({ "S": 51 }))?;
+  insert_product("plats", "🍄", "Émincé poulet aux champignons", json!({ "S": 50 }))?;
+  insert_product("plats", "🍗", "Escalope Milanaise", json!({ "S": 49 }))?;
+  insert_product("plats", "🍳", "Tajine viande hachée - œufs", json!({ "S": 37 }))?;
 
   // 🧇 CRÊPES
-  insert_product("crepes", "🧂", "Sucre", json!({ "": 15 }))?;
-  insert_product("crepes", "🍫", "Nutella", json!({ "": 20 }))?;
-  insert_product("crepes", "🧈", "Lotus", json!({ "": 23 }))?;
-  insert_product("crepes", "🍪", "Oreo", json!({ "": 22 }))?;
-  insert_product("crepes", "🍌", "Banane", json!({ "": 22 }))?;
-  insert_product("crepes", "🍫", "Kit Kat", json!({ "": 22 }))?;
-  insert_product("crepes", "🥞", "Mixte", json!({ "": 25 }))?;
-  insert_product("crepes", "🌰", "Kunafa Pistache", json!({ "": 30 }))?;
-  insert_product("crepes", "🥞", "Yobo", json!({ "": 35 }))?;
+  insert_product("crepes", "🧂", "Sucre", json!({ "S": 15 }))?;
+  insert_product("crepes", "🍫", "Nutella", json!({ "S": 20 }))?;
+  insert_product("crepes", "🧈", "Lotus", json!({ "S": 23 }))?;
+  insert_product("crepes", "🍪", "Oreo", json!({ "S": 22 }))?;
+  insert_product("crepes", "🍌", "Banane", json!({ "S": 22 }))?;
+  insert_product("crepes", "🍫", "Kit Kat", json!({ "S": 22 }))?;
+  insert_product("crepes", "🥞", "Mixte", json!({ "S": 25 }))?;
+  insert_product("crepes", "🌰", "Kunafa Pistache", json!({ "S": 30 }))?;
+  insert_product("crepes", "🥞", "Yobo", json!({ "S": 35 }))?;
 
   // 🧃 BOISSONS
   insert_product("boissons", "💧", "Eau", json!({ "S": 2, "L": 3 }))?;
-  insert_product("boissons", "🥤", "Coca Cola", json!({ "": 5 }))?;
-  insert_product("boissons", "🥤", "Pepsi", json!({ "": 5 }))?;
-  insert_product("boissons", "🥤", "Sprite", json!({ "": 5 }))?;
-  insert_product("boissons", "🥤", "Fanta", json!({ "": 5 }))?;
-  insert_product("boissons", "🥤", "Mirinda", json!({ "": 7 }))?;
-  insert_product("boissons", "🥤", "Oasis", json!({ "": 10 }))?;
-  insert_product("boissons", "🥤", "Rostoy", json!({ "": 10 }))?;
-  insert_product("boissons", "🥤", "Simon", json!({ "": 10 }))?;
-  insert_product("boissons", "⚡", "Red Bull", json!({ "": 20 }))?;
-  insert_product("boissons", "🥤", "LINX", json!({ "": 10 }))?;
-  insert_product("boissons", "🥤", "B52", json!({ "": 10 }))?;
+  insert_product("boissons", "🥤", "Coca Cola", json!({ "S": 5 }))?;
+  insert_product("boissons", "🥤", "Pepsi", json!({ "S": 5 }))?;
+  insert_product("boissons", "🥤", "Sprite", json!({ "S": 5 }))?;
+  insert_product("boissons", "🥤", "Fanta", json!({ "S": 5 }))?;
+  insert_product("boissons", "🥤", "Mirinda", json!({ "S": 7 }))?;
+  insert_product("boissons", "🥤", "Oasis", json!({ "S": 10 }))?;
+  insert_product("boissons", "🥤", "Rostoy", json!({ "S": 10 }))?;
+  insert_product("boissons", "🥤", "Simon", json!({ "S": 10 }))?;
+  insert_product("boissons", "⚡", "Red Bull", json!({ "S": 20 }))?;
+  insert_product("boissons", "🥤", "LINX", json!({ "S": 10 }))?;
+  insert_product("boissons", "🥤", "B52", json!({ "S": 10 }))?;
 
   // 🥤 JUS & MOJITO
-  insert_product("jus_mojito", "🍊", "Jus d'orange", json!({ "": 12 }))?;
-  insert_product("jus_mojito", "🥑", "Jus avocat", json!({ "": 18 }))?;
-  insert_product("jus_mojito", "🍌", "Jus banane", json!({ "": 12 }))?;
-  insert_product("jus_mojito", "🍋", "Jus citron", json!({ "": 12 }))?;
-  insert_product("jus_mojito", "🧃", "Jus mix", json!({ "": 16 }))?;
-  insert_product("jus_mojito", "🌿", "Mojito classique", json!({ "": 17 }))?;
-  insert_product("jus_mojito", "⚡", "Mojito Red Bull", json!({ "": 28 }))?;
+  insert_product("jus_mojito", "🍊", "Jus d'orange", json!({ "S": 12 }))?;
+  insert_product("jus_mojito", "🥑", "Jus avocat", json!({ "S": 18 }))?;
+  insert_product("jus_mojito", "🍌", "Jus banane", json!({ "S": 12 }))?;
+  insert_product("jus_mojito", "🍋", "Jus citron", json!({ "S": 12 }))?;
+  insert_product("jus_mojito", "🧃", "Jus mix", json!({ "S": 16 }))?;
+  insert_product("jus_mojito", "🌿", "Mojito classique", json!({ "S": 17 }))?;
+  insert_product("jus_mojito", "⚡", "Mojito Red Bull", json!({ "S": 28 }))?;
 
   // ➕ Supplément
-  insert_product("supplements", "🍟", "Frites", json!({ "": 5 }))?;
+  insert_product("supplements", "🍟", "Frites", json!({ "S": 5 }))?;
 
     conn
       .execute(

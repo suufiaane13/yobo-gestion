@@ -1,6 +1,6 @@
 {
-  "productName": "yobo-gestion",
-  "version": "2.6.7",
+  "productName": "YOBO",
+  "version": "2.6.9",
   "identifier": "com.yobo.gestion",
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "build": {
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "YOBO Gestion",
+        "title": "YOBO",
         "width": 1280,
         "height": 800,
         "minWidth": 980,
@@ -39,7 +39,7 @@
     "publisher": "YOBO",
     "copyright": "© YOBO — Gestion snack",
     "shortDescription": "Caisse et gestion pour snack (données sur votre PC).",
-    "longDescription": "YOBO Gestion : encaissement, menu, historique, comptes gérant et caissiers. Les données sont stockées localement sur cet ordinateur (SQLite).",
+    "longDescription": "YOBO : encaissement, menu, historique, comptes gérant et caissiers. Les données sont stockées localement sur cet ordinateur (SQLite).",
     "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",

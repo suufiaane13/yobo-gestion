@@ -26,7 +26,7 @@ export function LoginPage() {
       void getVersion().then((v) => setAppVersion(v))
     } else {
       // On évite l'appel synchrone direct pour ESLint
-      void Promise.resolve().then(() => setAppVersion('2.6.0-dev'))
+      void Promise.resolve().then(() => setAppVersion('2.6.9-dev'))
     }
   }, [])
 
@@ -118,14 +118,11 @@ export function LoginPage() {
             />
           </div>
           {splashLogoReady ? (
-            <>
-              <div className="login-page-splash-sub">Gestion snack</div>
-              <div className="login-page-splash-dots" aria-hidden>
-                <span />
-                <span />
-                <span />
-              </div>
-            </>
+            <div className="login-page-splash-dots" aria-hidden>
+              <span />
+              <span />
+              <span />
+            </div>
           ) : null}
         </div>
       ) : null}

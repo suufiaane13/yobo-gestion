@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react'
 import { isTauriRuntime } from '../lib/isTauriRuntime'
+import { useYoboStore } from '../store/yobo-store'
 import type { YoboPadKey } from '../lib/yoboNumericPadInput'
 import { applyPadKeyMadAmount, applyPadKeyPin } from '../lib/yoboNumericPadInput'
 import { getCurrentWindow } from '@tauri-apps/api/window'
@@ -544,8 +545,9 @@ function useYoboKeyboardTrigger(openKeyboard: () => void) {
   )
 }
 
-/** Au focus ou re-clic : ouvre le clavier AZERTY custom. */
+/** Au focus ou re-clic : ouvre le clavier AZERTY custom (si activé dans le profil gérant). */
 export function useYoboAlphaInputProps(value: string, onChange: (v: string) => void, maxLength = 200) {
+  const vkEnabled = useYoboStore((s) => s.virtualKeyboardEnabled)
   const { open, notifyFieldValue } = useVkContext()
   const fieldId = useId()
   const r = useRef({ value, onChange })
@@ -567,11 +569,21 @@ export function useYoboAlphaInputProps(value: string, onChange: (v: string) => v
     })
   }, [open, maxLength, fieldId])
 
-  return useYoboKeyboardTrigger(openKeyboard)
+  const triggers = useYoboKeyboardTrigger(openKeyboard)
+  if (!vkEnabled) {
+    return {
+      onPointerDown: () => {},
+      onPointerUp: () => {},
+      onFocus: () => {},
+      inputMode: 'text' as const,
+    }
+  }
+  return { ...triggers, inputMode: 'none' as const }
 }
 
 /** Au focus ou re-clic : pavé numérique PIN (C + ⌫, chiffres). */
 export function useYoboPinInputProps(value: string, onChange: (v: string) => void, maxLen: number, mask = true) {
+  const vkEnabled = useYoboStore((s) => s.virtualKeyboardEnabled)
   const { open, notifyFieldValue } = useVkContext()
   const fieldId = useId()
   const r = useRef({ value, onChange })
@@ -594,11 +606,21 @@ export function useYoboPinInputProps(value: string, onChange: (v: string) => voi
     })
   }, [open, maxLen, fieldId, mask])
 
-  return useYoboKeyboardTrigger(openKeyboard)
+  const triggers = useYoboKeyboardTrigger(openKeyboard)
+  if (!vkEnabled) {
+    return {
+      onPointerDown: () => {},
+      onPointerUp: () => {},
+      onFocus: () => {},
+      inputMode: 'numeric' as const,
+    }
+  }
+  return { ...triggers, inputMode: 'none' as const }
 }
 
 /** Au focus ou re-clic : pavé montant MAD (`applyPadKeyMadAmount`). */
 export function useYoboDecimalInputProps(value: string, onChange: (v: string) => void) {
+  const vkEnabled = useYoboStore((s) => s.virtualKeyboardEnabled)
   const { open, notifyFieldValue } = useVkContext()
   const fieldId = useId()
   const r = useRef({ value, onChange })
@@ -619,5 +641,14 @@ export function useYoboDecimalInputProps(value: string, onChange: (v: string) =>
     })
   }, [open, fieldId])
 
-  return useYoboKeyboardTrigger(openKeyboard)
+  const triggers = useYoboKeyboardTrigger(openKeyboard)
+  if (!vkEnabled) {
+    return {
+      onPointerDown: () => {},
+      onPointerUp: () => {},
+      onFocus: () => {},
+      inputMode: 'decimal' as const,
+    }
+  }
+  return { ...triggers, inputMode: 'none' as const }
 }

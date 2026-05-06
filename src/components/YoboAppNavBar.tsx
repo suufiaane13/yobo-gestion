@@ -84,12 +84,12 @@ export function YoboAppNavBar() {
 
     return (
       <aside className="fixed left-0 top-[40px] bottom-0 w-64 flex flex-col py-6 overflow-y-auto bg-[var(--surface)] shadow-2xl z-40">
-        <div className="px-6 mb-8">
-          <div className="flex items-center gap-3">
+        <div className="mb-8 px-6">
+          <div className="flex w-full items-center justify-center">
             <img
               src="/logo.png"
-              alt="YOBO Gestion"
-              className="h-11 w-auto max-w-[calc(100%)] shrink-0 object-contain object-left"
+              alt="YOBO"
+              className="h-16 w-auto max-w-full shrink-0 object-contain object-center"
               decoding="async"
             />
           </div>
@@ -145,9 +145,12 @@ export function YoboAppNavBar() {
   return (
     <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
       <div>
-        <div className="text-2xl font-extrabold tracking-tight">
-          <span className="text-[var(--accent)]">YO</span>BO
-        </div>
+        <img
+          src="/logo.png"
+          alt="YOBO"
+          className="h-8 w-auto object-contain"
+          decoding="async"
+        />
       </div>
 
       <div className="flex flex-1 items-center justify-center gap-1 px-2">

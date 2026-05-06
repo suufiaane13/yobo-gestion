@@ -1,64 +1,121 @@
-# YOBO Gestion
+# YOBO
 
-Application **bureau** (caisse + gestion) pour snack / restauration rapide : **Tauri 2**, **React 19**, **TypeScript**, **Tailwind 4**, **Zustand**. Les données sont stockées localement en **SQLite** (dossier données utilisateur, hors dossier du dépôt).
+Application **bureau Windows** de caisse et de gestion pour snack / restauration rapide : encaissement, catalogue, historique, utilisateurs et journaux. Stack : **Tauri 2**, **React 19**, **TypeScript**, **Vite 8**, **Tailwind 4**, **Zustand 5**. Les données vivent en **SQLite** local (hors dépôt Git).
+
+---
+
+## Fonctionnalités (aperçu)
+
+| Zone | Contenu |
+|------|---------|
+| **Caisse** | Session caisse, panier, types de commande, ticket cuisine / client |
+| **Menu** | Catalogue (catégories, produits, tailles, tarifs) selon rôle |
+| **Historique** | Sessions fermées, commandes, filtres, exports CSV / PDF |
+| **Profil & admin** | Compte, thème, sauvegardes base, tickets, mises à jour |
+| **Données** | SQLite utilisateur ; sauvegarde / restauration depuis l’app (gérant) |
+
+L’interface et les messages utilisateur sont en **français**.
+
+---
 
 ## Prérequis
 
-- [Node.js](https://nodejs.org/) 20+ (22 recommandé)
-- [Rust](https://www.rust-lang.org/tools/install) + dépendances système [Tauri](https://v2.tauri.app/start/prerequisites/) pour `tauri dev` / `tauri build`
+| Outil | Détail |
+|-------|--------|
+| **Node.js** | 20+ (22 recommandé) |
+| **Rust** | Stable + prérequis [Tauri v2](https://v2.tauri.app/start/prerequisites/) |
+| **Windows** | Cible principale du bundle NSIS |
 
-## Scripts
+---
 
-| Commande | Rôle |
-|----------|------|
-| `npm run dev` | Front seul (Vite, port 5173) |
-| `npm run tauri:dev` | App desktop avec hot reload |
-| `npm run build` | `tsc -b` + build Vite (front) |
-| `npm run build:tauri` ou `npx tauri build` | Installeur / exécutable (CLI Tauri) |
+## Démarrage rapide
+
+```bash
+git clone <url-du-depot> yobo && cd yobo
+npm install
+npm run tauri:dev
+```
+
+Le front seul (sans shell natif) : `npm run dev` → http://localhost:5173
+
+---
+
+## Scripts npm
+
+| Commande | Description |
+|----------|-------------|
+| `npm run dev` | Vite seul (port 5173) |
+| `npm run tauri:dev` | Application desktop avec rechargement à chaud |
+| `npm run build` | `tsc -b` + build Vite (`dist/`) |
+| `npm run build:tauri` | Build production + installateur Tauri (NSIS) |
+| `npm run release:user-pack` | Build front + Tauri, puis paquet utilisateur sous `distribution/` (voir ci‑dessous) |
 | `npm run lint` | ESLint |
-| `npm run test` | Vitest (tests unitaires) |
-| `npm run test:watch` | Vitest en mode watch |
+| `npm run test` | Vitest (une fois) |
+| `npm run test:watch` | Vitest en watch |
 | `npm run debug:doctor` | Diagnostic environnement (voir `scripts/`) |
+| `npm run icons:generate` | Régénérer les icônes à partir de `src-tauri/icons/512x512.png` |
 
-## Données & sauvegarde
+---
 
-La base **SQLite** est créée automatiquement sous le répertoire données local de l’OS (ex. `%LOCALAPPDATA%\yobo-gestion\yobo.sqlite` sur Windows).
+## Qualité avant commit / PR
 
-- **Application bureau (Tauri)** : onglet **Profil** (gérant) — *Sauvegarder sous…* / *Restaurer depuis un fichier…* (dialogue système). Après une restauration, **redémarrer l’app** pour recharger toutes les données.
-- **Copie manuelle** : tu peux toujours copier `yobo.sqlite` quand l’application est **fermée**, pour éviter les fichiers verrouillés.
+À faire passer localement après une modification non triviale :
 
-**Connexion de démo** (`db.rs`) : identifiant suggéré sur l’écran de login **admin** / **1234** — **à changer ou désactiver en production** (comptes réels, PIN forts).
+```bash
+npm run lint
+npm run test
+npm run build
+```
 
-## Structure utile
+Le workflow **GitHub Actions** (`.github/workflows/ci.yml`) enchaîne lint, tests et build front sur les branches configurées.
 
-- `src/` — interface React, store Zustand, textes client (`lib/yoboClientMessages.ts`)
-- `src-tauri/` — commandes Rust, schéma SQL, auth bcrypt
-- `src/lib/*.test.ts` — tests Vitest (logique pure : montants, pagination, tailles menu, erreurs affichées)
+---
 
-## Livrable pour l’utilisateur final (Windows)
+## Données & confidentialité
 
-1. Lance **`npm run release:user-pack`** (ou `.\scripts\build-user-release.ps1`).  
-   Cela exécute `npm run build`, `npx tauri build`, puis copie l’installateur NSIS dans  
-   **`distribution\YOBO-Gestion-v<version>\`** avec **`LISEZMOI-UTILISATEUR.txt`**.
-2. Donne au client **le dossier** ou au minimum le **`.exe`** + la notice texte.
+- **Emplacement** : base **SQLite** créée automatiquement dans le dossier données local de l’OS (ex. `%LOCALAPPDATA%\yobo-gestion\yobo.sqlite` sous Windows).
+- **Sauvegarde / restauration** : onglet **Profil** (gérant) — dialogues système. Après restauration, **redémarrer l’application**.
+- **Copie manuelle** : arrêter YOBO puis copier `yobo.sqlite` pour éviter un fichier verrouillé.
 
-L’installateur se trouve aussi dans `src-tauri\target\release\bundle\nsis\` après un `tauri build` manuel.
+**Compte de démo** (initialisation `db.rs`) : suggestions affichées au login — **à changer en production** (PIN forts, comptes réels).
+
+**Clés de signature des mises à jour** : ne pas commiter les fichiers privés listés dans `.gitignore` (`*.key`, etc.).
+
+---
+
+## Livrable utilisateur (Windows)
+
+1. Exécuter **`npm run release:user-pack`** (équivalent `scripts/build-user-release.ps1`).
+2. Récupérer le dossier **`distribution/YOBO-Gestion-v<version>/`** : installateur **`.exe`** + **`LISEZMOI-UTILISATEUR.txt`**.
+3. Sans script : après `npm run build:tauri`, l’installateur NSIS est aussi sous  
+   `src-tauri/target/release/bundle/nsis/`.
+
+---
+
+## Structure du dépôt
+
+| Chemin | Rôle |
+|--------|------|
+| `src/` | UI React, Zustand, messages (`lib/yoboClientMessages.ts`), tests `*.test.ts` |
+| `src-tauri/` | Rust, commandes Tauri, schéma SQLite, bundle NSIS |
+| `scripts/` | Build release, assets installeur, debug |
+| `distribution/` | Notice utilisateur ; dossiers versionnés ignorés par Git (voir `.gitignore`) |
+| `netlify-updates/` | Site statique optionnel (mises à jour / docs déploiement) |
+
+---
 
 ## Dépannage
 
-### « localhost a refusé de se connecter » / `ERR_CONNECTION_REFUSED`
+### `ERR_CONNECTION_REFUSED` / localhost
 
-L’exécutable dans **`src-tauri\target\debug\`** (build Rust **debug**, ex. après `cargo build` ou `cargo run` dans `src-tauri`) est prévu pour le **mode développement** : la fenêtre charge **`http://localhost:5173`**, donc il faut que **Vite tourne** en parallèle.
+Un `.exe` issu d’un build **debug** non packagé peut charger `http://localhost:5173` : il faut **`npm run dev`** en parallèle. Pour une app **autonome**, utiliser **`npm run build:tauri`** et lancer l’installateur ou l’exe sous **`target/release/`**, pas uniquement le binaire **`target/debug/`** nu.
 
-- **Pour coder** : à la racine du projet, lance **`npm run tauri:dev`** (ou **`npm run dev`** dans un terminal + **`cargo run`** dans `src-tauri`).
-- **Pour tester une vraie app installable (sans serveur)** : **`npm run build:tauri`**, puis ouvre **`src-tauri\target\release\yobo-gestion.exe`** ou l’installateur dans **`target\release\bundle\nsis\`** — pas le `.exe` du dossier **`debug`**.
+### Build Tauri
 
-Un build **debug** mais **avec l’interface embarquée** : **`npx tauri build --debug`** (l’exe sera sous `target\debug\bundle\…`, pas seulement `target\debug\yobo-gestion.exe` nu selon la config).
+Les artefacts lourds (`src-tauri/target/`, `dist/`, `node_modules/`) ne sont pas versionnés.
 
-## CI
-
-Le workflow GitHub Actions `.github/workflows/ci.yml` exécute **lint**, **tests** et **build** front sur chaque push / PR vers `main` ou `master`.
+---
 
 ## Licence
 
-Projet privé (`private` dans `package.json`). Adapter selon ton usage.
+Projet **private** (`package.json`). Adapter selon ton usage.

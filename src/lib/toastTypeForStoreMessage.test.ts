@@ -4,7 +4,7 @@ import { toastTypeForStoreMessage } from './toastTypeForStoreMessage'
 describe('toastTypeForStoreMessage', () => {
   it('validations → warning', () => {
     expect(toastTypeForStoreMessage('Indique ton nom.')).toBe('warning')
-    expect(toastTypeForStoreMessage('Choisis une taille : S.')).toBe('warning')
+    expect(toastTypeForStoreMessage('Indique un libellé de taille.')).toBe('warning')
     expect(toastTypeForStoreMessage('Ouvre d’abord ta caisse.')).toBe('warning')
     expect(toastTypeForStoreMessage('Le code PIN doit avoir entre 4 et 6 chiffres.')).toBe('warning')
   })

@@ -13,6 +13,7 @@ export type CashSessionClosedRow = {
   openedAt: string
   closedAt: string
   openingAmount: number
+  /** Somme actuelle des commandes validées de la session (même règle que l’onglet commandes). */
   salesTotal: number
   cashierName: string
   /** Même source que le ticket à la fermeture de caisse (réimpression historique). */
@@ -30,6 +31,15 @@ export type CashSessionDto = {
   userId: number
   openingAmount: number
   openedAt: string
+}
+
+/** Totaux session ouverte — alignés sur la fermeture (SQL), pas sur la liste `orders` du store. */
+export type CashSessionOpenTotalsDto = {
+  sessionId: number
+  openingAmount: number
+  salesTotal: number
+  theoretical: number
+  ordersCount: number
 }
 
 /** Résumé après fermeture de caisse. */

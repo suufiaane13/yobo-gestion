@@ -23,6 +23,8 @@ import {
   buildCashClosePreviewText,
 } from '../lib/ticketPrint'
 import { isTauriRuntime } from '../lib/isTauriRuntime'
+import { PROFIL_WELCOME_SESSION_PENDING } from '../lib/profilWelcomeStorage'
+import { sessionEntrySplashMinMs } from '../lib/sessionEntrySplash'
 import { capitalizeFirstLetter, isNonEmpty } from '../lib/yoboStrings'
 import {
   caissierFromApiRow,
@@ -112,9 +114,12 @@ export type YoboActions = {
   setOrderCancelModalOpen: (v: boolean) => void
   setOrderCancelReason: (v: string) => void
   setOrderCancelLoading: (v: boolean) => void
+  setOrderCancelAuthPin: (v: string) => void
+  setOrderCancelAuthError: (v: string | null) => void
   submitOrderCancel: () => Promise<void>
   setOrdersLoading: (v: boolean) => void
   setLoginLoading: (v: boolean) => void
+  setSessionEntrySplash: (v: boolean) => void
   setResetPinTarget: (v: CaissierDto | null) => void
   setResetPinValue: (v: string) => void
   setBusyResetPinUserId: (v: number | null) => void
@@ -144,7 +149,7 @@ export type YoboActions = {
   setProfileNamePin: (v: string) => void
   setProfileNameLoading: (v: boolean) => void
   setProfileNameError: (v: string | null) => void
-  updateAvatar: (avatar: string) => Promise<void>
+  updateAvatar: (avatar: string, options?: { quiet?: boolean }) => Promise<void>
   setAvatar: (avatar: string | null) => void
   setCaissiers: (v: CaissierDto[]) => void
   setCaissiersError: (v: string | null) => void
@@ -171,7 +176,9 @@ export type YoboActions = {
   setTicketLogo: (v: BitmapData | null) => void
   loadTicketSettings: () => Promise<void>
   loadTicketLogo: () => Promise<void>
-  saveTicketShopSettings: (shopLabel: string, shopPhone: string) => Promise<void>
+  saveTicketShopSettings: (shopLabel: string, shopPhone: string) => Promise<boolean>
+  setCashRenduEnabled: (v: boolean) => void
+  setVirtualKeyboardEnabled: (v: boolean) => void
   setGratinePrice: (v: number) => void
   setLogoutConfirmOpen: (v: boolean) => void
   setExitConfirmOpen: (v: boolean) => void
@@ -199,6 +206,7 @@ export type YoboActions = {
   loadCatalog: () => Promise<void>
   login: () => Promise<void>
   logout: () => void
+  startLogoutTransition: () => void
   addToCart: () => void
   bumpCartQty: (index: number, delta: number) => void
   removeCartItem: (index: number) => void
@@ -356,23 +364,37 @@ export const useYoboStore = create<YoboStore>()(
         setHistoryGerantOrdersAll: (v) => set({ historyGerantOrdersAll: v }),
         setHistoryGerantOrdersLoading: (v) => set({ historyGerantOrdersLoading: v }),
         setOrderDetailTarget: (v) => set({ orderDetailTarget: v }),
-        setOrderCancelModalOpen: (v) => set({ orderCancelModalOpen: v }),
+        setOrderCancelModalOpen: (v) => set({ orderCancelModalOpen: v, orderCancelAuthPin: '', orderCancelAuthError: null }),
         setOrderCancelReason: (v) => set({ orderCancelReason: v }),
         setOrderCancelLoading: (v) => set({ orderCancelLoading: v }),
+        setOrderCancelAuthPin: (v) => set({ orderCancelAuthPin: v }),
+        setOrderCancelAuthError: (v) => set({ orderCancelAuthError: v }),
         submitOrderCancel: async () => {
-          const { userId, orderDetailTarget, orderCancelReason, pushToast } = get()
+          const { userId, orderDetailTarget, orderCancelReason, pushToast, role, orderCancelAuthPin } = get()
           if (userId === null || orderDetailTarget === null) return
           const reason = orderCancelReason.trim()
           if (!reason) {
             pushToast('error', client.val.orderCancelReason)
             return
           }
+
           get().setOrderCancelLoading(true)
+          get().setOrderCancelAuthError(null)
+
+          const gerantPinForCancel =
+            role === 'caissier' ? (orderCancelAuthPin || '').trim() : null
+          if (role === 'caissier' && !gerantPinForCancel) {
+            get().setOrderCancelAuthError('PIN Gérant requis.')
+            get().setOrderCancelLoading(false)
+            return
+          }
+
           try {
             const updated = await invoke<OrderItem>('orders_cancel', {
               userId,
               orderId: orderDetailTarget.id,
               reason,
+              gerantPin: gerantPinForCancel,
             })
             const norm = normalizeOrderRow(updated)
             get().setOrders((prev) => prev.map((o) => (o.id === norm.id ? norm : o)))
@@ -387,13 +409,18 @@ export const useYoboStore = create<YoboStore>()(
             await get().refreshHistoryGerantOrders()
           } catch (e) {
             logDevError('orders_cancel', e)
-            pushToast('error', userFacingErrorMessage(e, client.error.orderCancel))
+            const msg = userFacingErrorMessage(e, client.error.orderCancel)
+            if (role === 'caissier' && /PIN|gérant|gerant/i.test(msg)) {
+              get().setOrderCancelAuthError(msg)
+            }
+            pushToast('error', msg)
           } finally {
             get().setOrderCancelLoading(false)
           }
         },
         setOrdersLoading: (v) => set({ ordersLoading: v }),
         setLoginLoading: (v) => set({ loginLoading: v }),
+        setSessionEntrySplash: (v) => set({ sessionEntrySplashOpen: v }),
         setResetPinTarget: (v) => set({ resetPinTarget: v }),
         setResetPinValue: (v) => set({ resetPinValue: v }),
         setBusyResetPinUserId: (v) => set({ busyResetPinUserId: v }),
@@ -424,7 +451,7 @@ export const useYoboStore = create<YoboStore>()(
         setProfileNameLoading: (v) => set({ profileNameLoading: v }),
         setProfileNameError: (v) => set({ profileNameError: v }),
         setAvatar: (v) => set({ avatar: v }),
-        updateAvatar: async (avatar: string) => {
+        updateAvatar: async (avatar: string, options?: { quiet?: boolean }) => {
           const { role, userId, pushToast } = get()
           if (userId === null) return
           try {
@@ -435,7 +462,7 @@ export const useYoboStore = create<YoboStore>()(
                 profileUserProfile: s.profileUserProfile ? { ...s.profileUserProfile, avatar } : null,
               }))
             }
-            pushToast('success', 'Avatar mis à jour !')
+            if (!options?.quiet) pushToast('success', 'Avatar mis à jour !')
           } catch (e) {
             logDevError('update_user_avatar', e)
             pushToast('error', "Échec de la mise à jour de l'avatar.")
@@ -635,14 +662,22 @@ export const useYoboStore = create<YoboStore>()(
               shopLabel: string
               shopPhone: string
               gratinePrice: number
+              cashRenduEnabled?: boolean
+              virtualKeyboardEnabled?: boolean
             }>('get_ticket_public_settings')
             const label = typeof r.shopLabel === 'string' && r.shopLabel.trim() ? r.shopLabel.trim() : 'YOBO SNACK'
             const phone = typeof r.shopPhone === 'string' ? r.shopPhone.trim() : ''
             const price = typeof r.gratinePrice === 'number' ? r.gratinePrice : 5
+            const cashRendu =
+              typeof r.cashRenduEnabled === 'boolean' ? r.cashRenduEnabled : true
+            const virtualKb =
+              typeof r.virtualKeyboardEnabled === 'boolean' ? r.virtualKeyboardEnabled : true
             set({
               ticketShopLabel: label,
               ticketShopPhone: phone,
               gratinePrice: price,
+              cashRenduEnabled: cashRendu,
+              virtualKeyboardEnabled: virtualKb,
             })
             await get().loadTicketLogo()
           } catch (e) {
@@ -654,7 +689,7 @@ export const useYoboStore = create<YoboStore>()(
           if (get().ticketLogo) return
           try {
             const { loadImageToEscposBitmap } = await import('../lib/imageProcessing')
-            const logo = await loadImageToEscposBitmap('/logo.png', 384)
+            const logo = await loadImageToEscposBitmap('/logo-print.png', 384)
             get().setTicketLogo(logo)
           } catch (e) {
             logDevError('loadTicketLogo', e)
@@ -662,8 +697,8 @@ export const useYoboStore = create<YoboStore>()(
         },
 
         saveTicketShopSettings: async (shopLabel, shopPhone) => {
-          const { userId, pushToast, gratinePrice } = get()
-          if (userId === null) return
+          const { userId, pushToast, gratinePrice, cashRenduEnabled, virtualKeyboardEnabled } = get()
+          if (userId === null) return false
           try {
             await invoke('set_ticket_shop_settings', {
               userId,
@@ -671,15 +706,21 @@ export const useYoboStore = create<YoboStore>()(
                 shopLabel: shopLabel.trim(),
                 shopPhone: shopPhone.trim(),
                 gratinePrice,
+                cashRenduEnabled,
+                virtualKeyboardEnabled,
               },
             })
             await get().loadTicketSettings()
             pushToast('success', client.success.ticketShopSaved)
+            return true
           } catch (e) {
             logDevError('set_ticket_shop_settings', e)
             pushToast('error', userFacingErrorMessage(e, client.error.ticketShopSave))
+            return false
           }
         },
+        setCashRenduEnabled: (v: boolean) => set({ cashRenduEnabled: v }),
+        setVirtualKeyboardEnabled: (v: boolean) => set({ virtualKeyboardEnabled: v }),
         setGratinePrice: (v: number) => set({ gratinePrice: v }),
 
         loadCaissiers: async () => {
@@ -814,24 +855,48 @@ export const useYoboStore = create<YoboStore>()(
               role,
             })
 
+            const entryStart = performance.now()
+
             get().setTheme(res.theme === 'light' ? 'light' : 'dark')
             get().setAvatar(res.avatar ?? null)
             get().setUserId(res.userId)
             get().setTab(role === 'gerant' ? 'dashboard' : 'caisse')
+            get().setSessionEntrySplash(true)
             get().setAuthed(true)
+            try {
+              sessionStorage.setItem(PROFIL_WELCOME_SESSION_PENDING, '1')
+            } catch {
+              /* ignore */
+            }
             await get().loadCatalog()
             if (role !== 'gerant') {
               await get().loadOrders(res.userId)
             }
+
+            const minMs = sessionEntrySplashMinMs()
+            const elapsed = performance.now() - entryStart
+            const wait = Math.max(0, minMs - elapsed)
+            if (wait > 0) {
+              await new Promise<void>((r) => {
+                window.setTimeout(r, wait)
+              })
+            }
+            get().setSessionEntrySplash(false)
           } catch (e) {
             logDevError('auth_login', e)
             get().setError(client.error.loginFailed)
+            get().setSessionEntrySplash(false)
           } finally {
             get().setLoginLoading(false)
           }
         },
 
         logout: () => {
+          try {
+            sessionStorage.removeItem(PROFIL_WELCOME_SESSION_PENDING)
+          } catch {
+            /* ignore */
+          }
           const { userId, role } = get()
           if (userId !== null && isTauriRuntime()) {
             void invoke('auth_log_logout', { input: { userId, role } }).catch((e) =>
@@ -878,8 +943,17 @@ export const useYoboStore = create<YoboStore>()(
             orderCancelLoading: false,
             ticketShopLabel: 'YOBO SNACK',
             ticketShopPhone: '',
+            cashRenduEnabled: true,
+            virtualKeyboardEnabled: true,
             logoutConfirmOpen: false,
+            logoutFadePending: false,
+            sessionEntrySplashOpen: false,
           }))
+        },
+
+        startLogoutTransition: () => {
+          get().setLogoutConfirmOpen(false)
+          set({ logoutFadePending: true })
         },
 
         requestLogout: () => {
@@ -1107,6 +1181,7 @@ export const useYoboStore = create<YoboStore>()(
             })
             await get().loadOrders(userId)
             set({ cart: [], orderType: null, orderComment: '', orderCustomerPhone: '', orderCustomerAddress: '' })
+            pushToast('success', client.success.orderValidated)
             try {
               const { ticketShopLabel, ticketShopPhone, ticketPrinterA, ticketPrinterB } = get()
               const ticketInput = {
@@ -1167,16 +1242,22 @@ export const useYoboStore = create<YoboStore>()(
           
           if (orderType === 'livraison') {
             get().setDeliveryModalOpen(true)
-          } else {
+          } else if (get().cashRenduEnabled) {
             get().setCashReceivedStr('')
             get().setCashRenduModalOpen(true)
+          } else {
+            void get().validateOrder(null)
           }
         },
 
         confirmDeliveryInfo: () => {
           get().setDeliveryModalOpen(false)
-          get().setCashReceivedStr('')
-          get().setCashRenduModalOpen(true)
+          if (get().cashRenduEnabled) {
+            get().setCashReceivedStr('')
+            get().setCashRenduModalOpen(true)
+          } else {
+            void get().validateOrder(null)
+          }
         },
 
         confirmCashRenduAndValidate: async () => {
@@ -1382,8 +1463,8 @@ export const useYoboStore = create<YoboStore>()(
             await invoke('change_user_password', {
               role,
               userId,
-              old_pin: oldPinDigits,
-              new_pin: newPinDigits,
+              oldPin: oldPinDigits,
+              newPin: newPinDigits,
             })
 
             get().setProfileSuccess(client.success.pinSaved)

@@ -84,11 +84,18 @@ type LogsListPageResponse = {
   total: number
 }
 
+/** Lit `clé=valeur` dans `meta` (jetons séparés par des espaces). Évite de matcher `id=` dans `session_id=…`. */
 function parseMetaValue(meta: string | null | undefined, key: string): string | null {
   if (!meta) return null
-  const regex = new RegExp(`${key}=([^\\s]+)`, 'i')
-  const match = meta.match(regex)
-  if (match) return match[1].replace(/_/g, ' ')
+  const want = key.toLowerCase()
+  const tokens = meta.trim().split(/\s+/).filter(Boolean)
+  for (const t of tokens) {
+    const eq = t.indexOf('=')
+    if (eq <= 0) continue
+    const k = t.slice(0, eq).toLowerCase()
+    if (k !== want) continue
+    return t.slice(eq + 1).replace(/_/g, ' ')
+  }
   return null
 }
 
@@ -601,7 +608,7 @@ export function GerantLogsPage({ userId }: { userId: number }) {
                                   : l.description}
                               </p>
                             )}
-                            {id && !resolvedName && l.actionType !== 'order' && (
+                            {id && !resolvedName && l.actionType !== 'order' && l.actionType !== 'cash' && (
                               <p className="text-[9px] text-[var(--muted)] opacity-50">ID: {id}</p>
                             )}
                           </div>

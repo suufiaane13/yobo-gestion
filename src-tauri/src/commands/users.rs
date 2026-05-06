@@ -429,31 +429,7 @@ pub fn verify_any_gerant_pin(pin: String) -> Result<(), String> {
   db::ensure_schema(&conn)?;
   db::ensure_default_gerant(&conn)?;
 
-  let pin_norm = pin.trim().to_string();
-  if pin_norm.is_empty() {
-    return Err("PIN requis.".to_string());
-  }
-
-  let mut stmt = conn
-    .prepare("SELECT password FROM users WHERE role='gerant' AND active=1")
-    .map_err(|e| e.to_string())?;
-
-  let mut rows = stmt.query([]).map_err(|e| e.to_string())?;
-  let mut found_match = false;
-
-  while let Some(row) = rows.next().map_err(|e| e.to_string())? {
-    let password_hash: String = row.get(0).map_err(|e| e.to_string())?;
-    if bcrypt::verify(&pin_norm, &password_hash).unwrap_or(false) {
-      found_match = true;
-      break;
-    }
-  }
-
-  if found_match {
-    Ok(())
-  } else {
-    Err("PIN Gérant invalide.".to_string())
-  }
+  crate::authz::verify_gerant_pin_authorization(&conn, &pin)
 }
 
 #[tauri::command]

@@ -258,6 +258,7 @@ html {
 
 .custom-scrollbar::-webkit-scrollbar {
   width: 5px;
+  height: 5px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -281,7 +282,7 @@ html {
   display: flex;
   flex-shrink: 0;
   align-items: stretch;
-  height: 40px;
+  height: 46px;
   border-bottom: 1px solid var(--border);
   border-top: 3px solid var(--accent);
   box-sizing: border-box;
@@ -552,15 +553,15 @@ html {
 
 /* Badge Utilisateur Premium (Antigravity Style) */
 .yobo-titlebar__user-badge {
-  margin: auto 10px;
+  margin: auto 6px;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 4px 12px 4px 8px;
-  border-radius: 6px;
+  gap: 0.45rem;
+  padding: 2px 8px 2px 6px;
+  border-radius: 4px;
   background: color-mix(in oklab, var(--surface) 60%, transparent);
   border: 1px solid color-mix(in oklab, var(--border) 30%, transparent);
-  border-left: 2px solid var(--muted);
+  border-left: 1.5px solid var(--muted);
   backdrop-filter: blur(4px);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   min-width: 0;
@@ -578,7 +579,7 @@ html {
 }
 
 .yobo-titlebar__user-icon {
-  font-size: 16px !important;
+  font-size: 14px !important;
   color: var(--muted);
   opacity: 0.8;
 }
@@ -589,11 +590,11 @@ html {
 }
 
 .yobo-titlebar__user-name {
-  max-width: 9rem;
+  max-width: 7rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -3068,10 +3069,6 @@ select.yobo-input {
     linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
 }
 
-:root[data-theme='light'] .login-page-splash-sub {
-  color: var(--text-h);
-}
-
 /* Splash : fond toujours sombre (identique au shell login) */
 .login-page-splash {
   --login-r: 0.75rem;
@@ -3108,8 +3105,8 @@ select.yobo-input {
 }
 
 .login-page-brand-img--splash {
-  max-width: min(92vw, 22rem);
-  max-height: min(30vh, 10.5rem);
+  max-width: min(94vw, 28rem);
+  max-height: min(38vh, 13.5rem);
   border-radius: var(--login-r);
   filter: drop-shadow(0 8px 28px rgba(0, 0, 0, 0.35));
 }
@@ -3130,7 +3127,7 @@ select.yobo-input {
 }
 
 .login-page-splash-logo-slot {
-  min-height: min(30vh, 10.5rem);
+  min-height: min(38vh, 13.5rem);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3147,23 +3144,15 @@ select.yobo-input {
   color: var(--accent);
 }
 
-.login-page-splash-sub {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.9);
-}
-
 .login-page-splash-dots {
   display: flex;
-  gap: 0.45rem;
+  gap: 0.55rem;
   align-items: center;
 }
 
 .login-page-splash-dots span {
-  width: 8px;
-  height: 8px;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
   background: var(--accent);
   box-shadow: 0 0 10px color-mix(in oklab, var(--accent) 55%, transparent);
@@ -3199,6 +3188,44 @@ select.yobo-input {
     animation: none;
     opacity: 0.92;
     filter: none;
+  }
+}
+
+/* Fondus connexion → écran logo chargement (splash session sous z-600) */
+.login-shell-exit-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 605;
+  pointer-events: none;
+  animation: login-shell-fade-out 320ms ease-out forwards;
+}
+
+@keyframes login-shell-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-shell-exit-layer {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* Fondu sortie contenu connecté → login (déconnexion) */
+.yobo-app-logout-fade {
+  pointer-events: none;
+  animation: login-shell-fade-out 320ms ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yobo-app-logout-fade {
+    animation: none;
+    opacity: 0;
   }
 }
 

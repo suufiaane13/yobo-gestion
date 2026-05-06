@@ -39,7 +39,7 @@ const YoboNumericInputPin = forwardRef<
       type={maskPin ? 'password' : 'text'}
       value={value}
       onChange={(e) => onValueChange(e.target.value)}
-      inputMode="none"
+      inputMode={vk.inputMode}
       onFocus={vk.onFocus}
       onPointerDown={(e) => {
         onPointerDown?.(e)
@@ -62,7 +62,7 @@ const YoboNumericInputDecimal = forwardRef<HTMLInputElement, BaseInputProps>(fun
       type="text"
       value={value}
       onChange={(e) => onValueChange(e.target.value)}
-      inputMode="none"
+      inputMode={vk.inputMode}
       onFocus={vk.onFocus}
       onPointerDown={(e) => {
         onPointerDown?.(e)
@@ -84,7 +84,7 @@ export const YoboAlphaInput = forwardRef<HTMLInputElement, YoboAlphaInputProps>(
       ref={ref}
       value={value}
       onChange={(e) => onValueChange(e.target.value)}
-      inputMode="none"
+      inputMode={vk.inputMode}
       onFocus={vk.onFocus}
       onPointerDown={(e) => {
         onPointerDown?.(e)
@@ -115,7 +115,7 @@ export const YoboAlphaTextarea = forwardRef<HTMLTextAreaElement, YoboAlphaTextar
       ref={ref}
       value={value}
       onChange={(e) => onValueChange(e.target.value)}
-      inputMode="none"
+      inputMode={vk.inputMode}
       onFocus={vk.onFocus}
       onPointerDown={(e) => {
         onPointerDown?.(e)

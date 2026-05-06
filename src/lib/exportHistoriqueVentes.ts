@@ -347,7 +347,7 @@ function buildPrintableFullHtml(title: string, subtitle: string, tableHtml: stri
     `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"/><title>${escapeHtml(title)}</title><style>${css}</style></head><body>` +
     `<div class="yobo-pdf-wrap">` +
     `<header class="yobo-pdf-hero">` +
-    `<div class="yobo-pdf-brand">YOBO Gestion</div>` +
+    `<div class="yobo-pdf-brand">YOBO</div>` +
     `<h1>${pdfHeroTitle(title)}</h1>` +
     `<p class="yobo-pdf-sub">${escapeHtml(subtitle)}</p>` +
     `</header>` +

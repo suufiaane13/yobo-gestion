@@ -15,11 +15,8 @@ export function toastTypeForStoreMessage(message: string): ToastType {
     /^Le code PIN doit\b/i,
     /^Les deux nouveaux codes\b/i,
     /^Ajoute au moins\b/i,
-    /^Cette taille ne convient pas\b/i,
     /^Nom enregistré\b/i,
-    /^Utilise uniquement\b/i,
     /^Ne saisis pas deux fois\b/i,
-    /^Combinaisons possibles\b/i,
   ]
 
   for (const re of warningPatterns) {

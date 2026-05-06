@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * YOBO Gestion — script de logs & debug
+ * YOBO — script de logs & debug
  *
  * Usage:
  *   node scripts/debug-yobo.mjs           → audit complet + fichier log (défaut)
@@ -212,7 +212,7 @@ if (mode === 'dev') {
 } else if (mode === 'audit' || mode === 'all') {
   ensureLogsDir()
   const logFile = path.join(LOGS_DIR, `yobo-debug-${stamp()}.log`)
-  const header = `YOBO Gestion — rapport debug\nDémarré: ${new Date().toISOString()}\nMode: ${mode}${fullAudit ? ' (FULL)' : ''}\n\n`
+  const header = `YOBO — rapport debug\nDémarré: ${new Date().toISOString()}\nMode: ${mode}${fullAudit ? ' (FULL)' : ''}\n\n`
   fs.writeFileSync(logFile, header, 'utf8')
   process.stdout.write(header)
 
@@ -229,7 +229,7 @@ if (mode === 'dev') {
 } else if (mode === 'doctor') {
   ensureLogsDir()
   const logFile = path.join(LOGS_DIR, `yobo-doctor-${stamp()}.log`)
-  const docHeader = `YOBO Gestion — doctor\nDémarré: ${new Date().toISOString()}${fullAudit ? ' (FULL)' : ''}\n\n`
+  const docHeader = `YOBO — doctor\nDémarré: ${new Date().toISOString()}${fullAudit ? ' (FULL)' : ''}\n\n`
   fs.writeFileSync(logFile, docHeader, 'utf8')
   process.stdout.write(docHeader)
   doctor(logFile)

@@ -27,6 +27,7 @@ dist-ssr
 src-tauri/.updater.key
 yobo-updater.key
 yobo-updater.key.pub
+yobo-new-updater.key
 
 # Installateurs publiés sur Netlify (souvent trop lourds pour Git — upload via UI ou CI)
 netlify-updates/releases/*.exe

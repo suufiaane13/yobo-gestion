@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { QRCodeSVG } from 'qrcode.react'
 import { invoke } from '@tauri-apps/api/core'
 import { getVersion } from '@tauri-apps/api/app'
 import { useShallow } from 'zustand/shallow'
@@ -18,6 +19,65 @@ const THEME_PREF_OPTIONS: { value: ThemePreference; label: string; hint: string 
   { value: 'manual', label: 'Manuel (clair / sombre)', hint: 'Bouton dans la barre de titre ou ci-dessous.' },
   { value: 'auto_hour', label: 'Automatique (heure)', hint: 'Clair de 7 h à 21 h, sombre la nuit.' },
 ]
+
+type ProfilCardId =
+  | 'profilInfo'
+  | 'profilSecurity'
+  | 'prefDisplay'
+  | 'prefCaisse'
+  | 'estUpdater'
+  | 'estTickets'
+  | 'estData'
+
+const PROFIL_CARD_DEFAULT_OPEN: Record<ProfilCardId, boolean> = {
+  profilInfo: false,
+  profilSecurity: false,
+  prefDisplay: false,
+  prefCaisse: false,
+  estUpdater: false,
+  estTickets: false,
+  estData: false,
+}
+
+function ProfilCollapsibleCard({
+  title,
+  icon,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string
+  icon: ReactNode
+  open: boolean
+  onToggle: () => void
+  children: ReactNode
+}) {
+  return (
+    <section className="overflow-hidden rounded-2xl bg-[var(--card)] shadow-[0_16px_48px_-24px_rgba(0,0,0,0.5)] ring-1 ring-[var(--border)]">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center gap-3 border-b border-[var(--border)] px-6 py-4 text-left transition hover:bg-[var(--surface)]/40"
+        aria-expanded={open}
+      >
+        <h3 className="flex min-w-0 flex-1 items-center gap-2 text-sm font-black uppercase tracking-wider text-[var(--text-h)]">
+          {icon}
+          <span className="truncate">{title}</span>
+        </h3>
+        <span
+          className={`material-symbols-outlined shrink-0 text-[22px] text-[var(--accent)] transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          aria-hidden
+        >
+          expand_more
+        </span>
+      </button>
+      {open ? <div className="animate-in fade-in duration-200">{children}</div> : null}
+    </section>
+  )
+}
+
+/** Navigation latérale Profil : compte utilisateur · préférences locales · réglages magasin (gérant bureau). */
+type ProfilNavSection = 'profil' | 'preferences' | 'establishment'
 
 export function ProfilPage() {
   const role = useYoboStore((s) => s.role)
@@ -41,7 +101,11 @@ export function ProfilPage() {
   const setTicketPrinterB = useYoboStore((s) => s.setTicketPrinterB)
   const testPrinter = useYoboStore((s) => s.testPrinter)
   const saveTicketShopSettings = useYoboStore((s) => s.saveTicketShopSettings)
-  const [activeSection, setActiveSection] = useState<'profil' | 'settings'>('profil')
+  const cashRenduEnabled = useYoboStore((s) => s.cashRenduEnabled)
+  const setCashRenduEnabled = useYoboStore((s) => s.setCashRenduEnabled)
+  const virtualKeyboardEnabled = useYoboStore((s) => s.virtualKeyboardEnabled)
+  const setVirtualKeyboardEnabled = useYoboStore((s) => s.setVirtualKeyboardEnabled)
+  const [activeSection, setActiveSection] = useState<ProfilNavSection>('profil')
   const [dbBusy, setDbBusy] = useState<'backup' | 'restore' | null>(null)
   const [dbPurgePin, setDbPurgePin] = useState('')
   const [dbPurgePinVerified, setDbPurgePinVerified] = useState(false)
@@ -59,6 +123,70 @@ export function ProfilPage() {
   const [ticketSaving, setTicketSaving] = useState(false)
   const [printers, setPrinters] = useState<string[]>([])
   const [appVersion, setAppVersion] = useState('')
+  const [socialModal, setSocialModal] = useState<{ type: 'github' | 'instagram'; url: string; label: string } | null>(null)
+  const socialRef = useRef<HTMLDivElement>(null)
+  const socialIconRowRef = useRef<HTMLDivElement>(null)
+  const socialGithubBtnRef = useRef<HTMLButtonElement>(null)
+  const socialInstagramBtnRef = useRef<HTMLButtonElement>(null)
+  const [socialQrArrowLeftPx, setSocialQrArrowLeftPx] = useState<number | null>(null)
+
+  const SOCIAL_QR_PANEL_W_PX = 188
+
+  const updateSocialQrArrowPosition = useCallback(() => {
+    if (!socialModal) {
+      setSocialQrArrowLeftPx(null)
+      return
+    }
+    const row = socialIconRowRef.current
+    const btn = socialModal.type === 'github' ? socialGithubBtnRef.current : socialInstagramBtnRef.current
+    if (!row || !btn) return
+    const rowRect = row.getBoundingClientRect()
+    const btnRect = btn.getBoundingClientRect()
+    const iconCenterX = btnRect.left + btnRect.width / 2 - rowRect.left
+    setSocialQrArrowLeftPx(iconCenterX - rowRect.width / 2 + SOCIAL_QR_PANEL_W_PX / 2)
+  }, [socialModal])
+  const [profilCardOpen, setProfilCardOpen] = useState<Record<ProfilCardId, boolean>>(() => ({ ...PROFIL_CARD_DEFAULT_OPEN }))
+  const toggleProfilCard = (id: ProfilCardId) => {
+    setProfilCardOpen((prev) => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  useEffect(() => {
+    if (!socialModal) return
+    const onDown = (e: MouseEvent) => {
+      if (socialRef.current && !socialRef.current.contains(e.target as Node)) {
+        setSocialModal(null)
+      }
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSocialModal(null)
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [socialModal])
+
+  useLayoutEffect(() => {
+    updateSocialQrArrowPosition()
+  }, [updateSocialQrArrowPosition])
+
+  useEffect(() => {
+    if (!socialModal) return
+    const onResize = () => updateSocialQrArrowPosition()
+    window.addEventListener('resize', onResize)
+    const row = socialIconRowRef.current
+    let ro: ResizeObserver | undefined
+    if (typeof ResizeObserver !== 'undefined' && row) {
+      ro = new ResizeObserver(onResize)
+      ro.observe(row)
+    }
+    return () => {
+      window.removeEventListener('resize', onResize)
+      ro?.disconnect()
+    }
+  }, [socialModal, updateSocialQrArrowPosition])
 
   useEffect(() => {
     if (isTauriRuntime()) {
@@ -84,6 +212,15 @@ export function ProfilPage() {
       }
     })()
   }, [role])
+
+  const isGerant = role === 'gerant'
+  const showEstablishmentNav = isGerant && isTauriRuntime()
+
+  useEffect(() => {
+    if (activeSection === 'establishment' && !showEstablishmentNav) {
+      setActiveSection('preferences')
+    }
+  }, [activeSection, showEstablishmentNav])
 
   const {
     profileNameDraft,
@@ -129,19 +266,20 @@ export function ProfilPage() {
       previewCashCloseTicketMockup: s.previewCashCloseTicketMockup,
     })),
   )
-  const isGerant = role === 'gerant'
 
   return (
     <>
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
         {/* SIDEBAR NAVIGATION */}
-        <aside className="w-full lg:w-64 lg:shrink-0 lg:sticky lg:top-4">
+        <aside
+          className={`w-full lg:w-64 lg:shrink-0 lg:sticky lg:top-4 ${socialModal ? 'relative z-[45]' : ''}`}
+        >
           <div className="overflow-hidden rounded-2xl bg-[var(--card)] shadow-[0_8px_32px_-12px_rgba(0,0,0,0.4)] ring-1 ring-[var(--border)]">
             {/* User Preview Header */}
             <div className="border-b border-[var(--border)] bg-[var(--surface)] p-6 text-center">
               <div className="mx-auto mb-3 flex items-center justify-center">
                 {profileUserProfile?.avatar ? (
-                  <YoboAvatarDisplay id={profileUserProfile.avatar} size="lg" className="ring-4 ring-[var(--card)]" />
+                  <YoboAvatarDisplay id={profileUserProfile.avatar} size="xl" className="ring-4 ring-[var(--card)]" />
                 ) : (
                   <div className="flex size-20 items-center justify-center rounded-2xl bg-gradient-to-tr from-[var(--accent)] to-[var(--accent-container)] text-2xl font-black text-white shadow-lg ring-4 ring-[var(--card)] transition-all duration-300 hover:scale-110 hover:rotate-3 active:scale-90 cursor-pointer">
                     {profileUserProfile ? firstLetterUpper(profileUserProfile.name) : <span className="material-symbols-outlined text-3xl">person</span>}
@@ -159,27 +297,139 @@ export function ProfilPage() {
             </div>
 
             {/* Nav Links */}
-            <nav className="p-2">
+            <nav className="space-y-1 p-2">
               <button
+                type="button"
                 onClick={() => setActiveSection('profil')}
                 className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-xs font-black transition-all ${activeSection === 'profil' ? 'bg-[var(--accent)] text-[#4d2600] shadow-md' : 'text-[var(--muted)] hover:bg-[var(--surface)] hover:text-[var(--text-h)]'}`}
               >
                 <span className="material-symbols-outlined text-[20px]">account_circle</span>
-                Mon Profil
+                Mon profil
               </button>
               <button
-                onClick={() => setActiveSection('settings')}
-                className={`mt-1 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-xs font-black transition-all ${activeSection === 'settings' ? 'bg-[var(--accent)] text-[#4d2600] shadow-md' : 'text-[var(--muted)] hover:bg-[var(--surface)] hover:text-[var(--text-h)]'}`}
+                type="button"
+                onClick={() => setActiveSection('preferences')}
+                className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-xs font-black transition-all ${activeSection === 'preferences' ? 'bg-[var(--accent)] text-[#4d2600] shadow-md' : 'text-[var(--muted)] hover:bg-[var(--surface)] hover:text-[var(--text-h)]'}`}
               >
-                <span className="material-symbols-outlined text-[20px]">settings</span>
-                Réglages App
+                <span className="material-symbols-outlined text-[20px]">tune</span>
+                Préférences
               </button>
+              {showEstablishmentNav ? (
+                <button
+                  type="button"
+                  onClick={() => setActiveSection('establishment')}
+                  className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-xs font-black transition-all ${activeSection === 'establishment' ? 'bg-[var(--accent)] text-[#4d2600] shadow-md' : 'text-[var(--muted)] hover:bg-[var(--surface)] hover:text-[var(--text-h)]'}`}
+                >
+                  <span className="material-symbols-outlined text-[20px]">storefront</span>
+                  Établissement
+                </button>
+              ) : null}
             </nav>
           </div>
 
-          {/* Support/Info box */}
-          <div className="mt-4 p-4 text-center text-[10px] font-bold text-[var(--muted)] opacity-50">
-            YOBO {appVersion ? `v${appVersion}` : ''}<br />Design & Performance
+          {/* Carte application / développeur — même langage visuel que la carte profil */}
+          <div ref={socialRef} className="relative mt-2">
+            <div className="rounded-2xl bg-[var(--card)] shadow-[0_8px_32px_-12px_rgba(0,0,0,0.4)] ring-1 ring-[var(--border)] overflow-visible">
+              <div className="rounded-t-2xl border-b border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-center">
+                <div className="flex items-center justify-center gap-2">
+                  <span className="material-symbols-outlined text-[18px] text-[var(--accent)]">developer_mode</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.12em] text-[var(--text-h)]">YOBO</span>
+                  {appVersion ? (
+                    <span className="text-[9px] font-bold tabular-nums text-[var(--muted)]">v{appVersion}</span>
+                  ) : null}
+                </div>
+                <div className="mt-1.5 flex items-center justify-center">
+                  <span className="inline-flex rounded-full bg-[var(--accent-bg)] px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-[var(--accent)]">
+                    Application
+                  </span>
+                </div>
+              </div>
+
+              <div className="rounded-b-2xl p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-[var(--muted)]">Développé par</span>
+                  <div ref={socialIconRowRef} className="relative flex shrink-0 items-center gap-1.5">
+                    <button
+                      ref={socialGithubBtnRef}
+                      type="button"
+                      onClick={() =>
+                        setSocialModal((s) =>
+                          s?.type === 'github' ? null : { type: 'github', url: 'https://github.com/suufiaane13', label: 'GitHub' },
+                        )
+                      }
+                      className="group flex size-9 items-center justify-center rounded-xl bg-[var(--surface)] text-[var(--muted)] ring-1 ring-[var(--border)] transition-all hover:bg-[var(--accent-bg)] hover:text-[var(--accent)] hover:ring-[var(--accent)]/35"
+                      aria-label="GitHub"
+                      aria-expanded={socialModal?.type === 'github'}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" className="transition-transform group-hover:scale-110" fill="currentColor">
+                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.335-1.755-1.335-1.755-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12z" />
+                      </svg>
+                    </button>
+                    <button
+                      ref={socialInstagramBtnRef}
+                      type="button"
+                      onClick={() =>
+                        setSocialModal((s) =>
+                          s?.type === 'instagram' ? null : { type: 'instagram', url: 'https://instagram.com/suuf.iaane', label: 'Instagram' },
+                        )
+                      }
+                      className="group flex size-9 items-center justify-center rounded-xl bg-[var(--surface)] text-[var(--muted)] ring-1 ring-[var(--border)] transition-all hover:bg-[color-mix(in_oklab,#E1306C_12%,var(--surface))] hover:text-[#E1306C] hover:ring-[#E1306C]/35"
+                      aria-label="Instagram"
+                      aria-expanded={socialModal?.type === 'instagram'}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" className="transition-transform group-hover:scale-110" fill="currentColor">
+                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
+                      </svg>
+                    </button>
+
+                    {socialModal ? (
+                      <div
+                        className="absolute left-1/2 top-full z-[60] mt-1.5 w-[188px] max-w-[calc(100vw-1.5rem)] -translate-x-1/2 animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="social-qr-title"
+                      >
+                        <div className="relative">
+                        <div className="relative z-[1] overflow-hidden rounded-xl bg-[var(--card)] shadow-[0_16px_40px_-12px_rgba(0,0,0,0.45)] ring-1 ring-[var(--border)]">
+                          <div className="flex items-center justify-between gap-2 border-b border-[var(--border)] bg-[var(--surface)] px-3 py-2">
+                            <span id="social-qr-title" className="truncate text-[10px] font-black uppercase tracking-wider text-[var(--text-h)]">
+                              {socialModal.label}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setSocialModal(null)}
+                              className="flex size-7 shrink-0 items-center justify-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--card)] hover:text-[var(--text-h)]"
+                              aria-label="Fermer"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">close</span>
+                            </button>
+                          </div>
+                          <div className="p-3 pt-2">
+                            <p className="mb-2 text-center text-[9px] font-bold uppercase tracking-wide text-[var(--muted)]">Scanner pour nous suivre</p>
+                            <div className="mx-auto flex aspect-square w-[148px] items-center justify-center rounded-lg bg-white p-3 shadow-inner ring-1 ring-black/5">
+                              <QRCodeSVG value={socialModal.url} size={116} level="H" includeMargin={false} />
+                            </div>
+                          </div>
+                        </div>
+                          {/* Queue alignée sur le centre de l’icône (mesure DOM) */}
+                          <div
+                            className="pointer-events-none absolute -top-[15px] z-[2] -translate-x-1/2 [filter:drop-shadow(0_-2px_6px_color-mix(in_oklab,var(--accent)_35%,transparent))]"
+                            style={{
+                              left: socialQrArrowLeftPx != null ? `${socialQrArrowLeftPx}px` : '50%',
+                            }}
+                            aria-hidden
+                          >
+                            {/* Queue plus longue vers les icônes (petit écart mt-1.5 sous la rangée) */}
+                            <div className="h-0 w-0 border-x-[11px] border-b-[13px] border-x-transparent border-b-[color-mix(in_oklab,var(--accent)_55%,var(--border))]" />
+                            <div className="absolute left-1/2 top-[2px] h-0 w-0 -translate-x-1/2 border-x-[10px] border-b-[12px] border-x-transparent border-b-[var(--card)]" />
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </aside>
 
@@ -187,14 +437,12 @@ export function ProfilPage() {
         <main className="min-w-0 flex-1 space-y-6">
           {activeSection === 'profil' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              {/* PERSONAL INFO CARD */}
-              <section className="overflow-hidden rounded-2xl bg-[var(--card)] shadow-[0_16px_48px_-24px_rgba(0,0,0,0.5)] ring-1 ring-[var(--border)]">
-                <div className="border-b border-[var(--border)] px-6 py-4">
-                  <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-wider text-[var(--text-h)]">
-                    <span className="material-symbols-outlined text-[18px] text-[var(--accent)]">badge</span>
-                    Informations personnelles
-                  </h3>
-                </div>
+              <ProfilCollapsibleCard
+                title="Informations personnelles"
+                icon={<span className="material-symbols-outlined text-[18px] text-[var(--accent)]">badge</span>}
+                open={profilCardOpen.profilInfo}
+                onToggle={() => toggleProfilCard('profilInfo')}
+              >
                 <div className="p-6">
                   {isGerant ? (
                     <div className="space-y-6">
@@ -224,39 +472,43 @@ export function ProfilPage() {
                         </button>
                       </div>
 
-                      {/* AVATAR PICKER SECTION */}
-                      <div className="border-t border-[var(--border)] border-dashed pt-6">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--muted)]">Choisir un avatar</label>
-                        <div className="mt-4">
+                      <div className="border-t border-[var(--border)] border-dashed pt-4">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--muted)]">
+                          Choisir un avatar
+                        </label>
+                        <div className="mt-2">
                           <YoboAvatarPicker />
                         </div>
                       </div>
                     </div>
                   ) : (
                     <div className="space-y-6">
-                      <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
-                        <span className="text-xs font-bold text-[var(--muted)]">Le changement de nom est réservé au gérant.</span>
-                      </div>
-                      
-                      <div className="border-t border-[var(--border)] border-dashed pt-6">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--muted)]">Choisir un avatar</label>
-                        <div className="mt-4">
+                    <div className="flex items-center gap-3 rounded-xl border border-[color-mix(in_oklab,var(--border)_85%,transparent)] bg-[var(--surface)] p-4 shadow-sm">
+                      <span className="material-symbols-outlined text-[20px] text-[var(--muted)] opacity-60">info</span>
+                      <p className="m-0 text-xs font-bold text-[var(--muted)] leading-relaxed">
+                        Le changement de nom est réservé au gérant pour garantir l&apos;intégrité des rapports.
+                      </p>
+                    </div>
+
+                      <div className="border-t border-[var(--border)] border-dashed pt-4">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--muted)]">
+                          Choisir un avatar
+                        </label>
+                        <div className="mt-2">
                           <YoboAvatarPicker />
                         </div>
                       </div>
                     </div>
                   )}
                 </div>
-              </section>
+              </ProfilCollapsibleCard>
 
-              {/* SECURITY CARD */}
-              <section className="overflow-hidden rounded-2xl bg-[var(--card)] shadow-[0_16px_48px_-24px_rgba(0,0,0,0.5)] ring-1 ring-[var(--border)]">
-                <div className="border-b border-[var(--border)] px-6 py-4">
-                  <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-wider text-[var(--text-h)]">
-                    <span className="material-symbols-outlined text-[18px] text-[var(--accent)]">lock_reset</span>
-                    Sécurité & Code PIN
-                  </h3>
-                </div>
+              <ProfilCollapsibleCard
+                title="Sécurité & Code PIN"
+                icon={<span className="material-symbols-outlined text-[18px] text-[var(--accent)]">lock_reset</span>}
+                open={profilCardOpen.profilSecurity}
+                onToggle={() => toggleProfilCard('profilSecurity')}
+              >
                 <div className="p-6">
                   <div className="grid gap-6">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
@@ -328,20 +580,18 @@ export function ProfilPage() {
                     )}
                   </div>
                 </div>
-              </section>
+              </ProfilCollapsibleCard>
             </div>
           )}
 
-          {activeSection === 'settings' && (
+          {activeSection === 'preferences' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              {/* DISPLAY SETTINGS */}
-              <section className="overflow-hidden rounded-2xl bg-[var(--card)] shadow-[0_16px_48px_-24px_rgba(0,0,0,0.5)] ring-1 ring-[var(--border)]">
-                <div className="border-b border-[var(--border)] px-6 py-4">
-                  <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-wider text-[var(--text-h)]">
-                    <span className="material-symbols-outlined text-[18px] text-[var(--accent)]">auto_awesome</span>
-                    Design & Performance
-                  </h3>
-                </div>
+              <ProfilCollapsibleCard
+                title="Affichage"
+                icon={<span className="material-symbols-outlined text-[18px] text-[var(--accent)]">palette</span>}
+                open={profilCardOpen.prefDisplay}
+                onToggle={() => toggleProfilCard('prefDisplay')}
+              >
                 <div className="p-6">
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="flex flex-col justify-center">
@@ -369,54 +619,110 @@ export function ProfilPage() {
                       </div>
                     )}
                   </div>
-
-                  <div className="mt-8 flex flex-wrap items-center gap-3">
-                    <a 
-                      href="https://github.com/suufiaane13" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="group flex items-center gap-2 rounded-lg bg-[var(--surface)] px-3 py-1.5 ring-1 ring-[var(--border)] transition-all hover:ring-[var(--accent)]/40 hover:bg-[var(--accent)]/5"
-                    >
-                      <span className="material-symbols-outlined text-[16px] text-[var(--muted)] group-hover:text-[var(--text-h)]">code</span>
-                      <span className="text-[10px] font-black tracking-widest uppercase text-[var(--muted)] group-hover:text-[var(--text-h)]">suufiaane13</span>
-                    </a>
-                    <a 
-                      href="https://instagram.com/suuf.iaane" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="group flex items-center gap-2 rounded-lg bg-[var(--surface)] px-3 py-1.5 ring-1 ring-[var(--border)] transition-all hover:ring-[#E1306C]/40 hover:bg-[#E1306C]/5"
-                    >
-                      <span className="material-symbols-outlined text-[16px] text-[var(--muted)] group-hover:text-[#E1306C]">camera_alt</span>
-                      <span className="text-[10px] font-black tracking-widest uppercase text-[var(--muted)] group-hover:text-[var(--text-h)]">suuf.iaane</span>
-                    </a>
-                  </div>
                 </div>
-              </section>
+              </ProfilCollapsibleCard>
 
-              {/* UPDATER SECTION (Gerant Only) */}
               {isGerant && isTauriRuntime() && (
-                <section className="overflow-hidden rounded-2xl bg-[var(--card)] shadow-[0_16px_48px_-24px_rgba(0,0,0,0.5)] ring-1 ring-[var(--border)]">
-                  <div className="border-b border-[var(--border)] px-6 py-4">
-                    <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-wider text-[var(--text-h)]">
-                      <span className="material-symbols-outlined text-[18px] text-[var(--accent)]">system_update</span>
-                      Mise à jour du système
-                    </h3>
+                <ProfilCollapsibleCard
+                  title="Caisse & saisie"
+                  icon={<span className="material-symbols-outlined text-[18px] text-[var(--accent)]">point_of_sale</span>}
+                  open={profilCardOpen.prefCaisse}
+                  onToggle={() => toggleProfilCard('prefCaisse')}
+                >
+                  <div className="space-y-4 p-6">
+                    <div className="flex flex-col gap-3 rounded-2xl bg-[var(--surface)] p-4 ring-1 ring-[var(--border)] sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-[var(--muted)]">
+                          Rendu d&apos;espèces à la caisse
+                        </div>
+                        <p className="mt-1 text-xs text-[var(--muted)]">
+                          Saisie du montant reçu et du rendu avant validation (désactiver pour valider directement).
+                        </p>
+                      </div>
+                      <label className="flex shrink-0 cursor-pointer items-center gap-3">
+                        <span className="text-xs font-bold text-[var(--text-h)]">{cashRenduEnabled ? 'Activé' : 'Désactivé'}</span>
+                        <div className="relative">
+                          <input
+                            type="checkbox"
+                            className="peer sr-only"
+                            checked={cashRenduEnabled}
+                            onChange={(e) => {
+                              const next = e.target.checked
+                              const prev = cashRenduEnabled
+                              setCashRenduEnabled(next)
+                              void (async () => {
+                                const ok = await saveTicketShopSettings(ticketDraftLabel, ticketDraftPhone)
+                                if (!ok) setCashRenduEnabled(prev)
+                              })()
+                            }}
+                          />
+                          <div className="h-7 w-12 rounded-full border border-[var(--border)] bg-[var(--card)] peer-checked:border-[var(--accent)] peer-checked:bg-[var(--accent)] transition-colors" />
+                          <div className="absolute left-1 top-1 h-5 w-5 rounded-full bg-[var(--muted)] transition-transform peer-checked:translate-x-5 peer-checked:bg-[#4d2600]" />
+                        </div>
+                      </label>
+                    </div>
+
+                    <div className="flex flex-col gap-3 rounded-2xl bg-[var(--surface)] p-4 ring-1 ring-[var(--border)] sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-[var(--muted)]">
+                          Clavier tactile YOBO
+                        </div>
+                        <p className="mt-1 text-xs text-[var(--muted)]">
+                          Désactive pour utiliser uniquement le clavier système (physique ou OS).
+                        </p>
+                      </div>
+                      <label className="flex shrink-0 cursor-pointer items-center gap-3">
+                        <span className="text-xs font-bold text-[var(--text-h)]">
+                          {virtualKeyboardEnabled ? 'Activé' : 'Désactivé'}
+                        </span>
+                        <div className="relative">
+                          <input
+                            type="checkbox"
+                            className="peer sr-only"
+                            checked={virtualKeyboardEnabled}
+                            onChange={(e) => {
+                              const next = e.target.checked
+                              const prev = virtualKeyboardEnabled
+                              setVirtualKeyboardEnabled(next)
+                              void (async () => {
+                                const ok = await saveTicketShopSettings(ticketDraftLabel, ticketDraftPhone)
+                                if (!ok) setVirtualKeyboardEnabled(prev)
+                              })()
+                            }}
+                          />
+                          <div className="h-7 w-12 rounded-full border border-[var(--border)] bg-[var(--card)] peer-checked:border-[var(--accent)] peer-checked:bg-[var(--accent)] transition-colors" />
+                          <div className="absolute left-1 top-1 h-5 w-5 rounded-full bg-[var(--muted)] transition-transform peer-checked:translate-x-5 peer-checked:bg-[#4d2600]" />
+                        </div>
+                      </label>
+                    </div>
                   </div>
+                </ProfilCollapsibleCard>
+              )}
+            </div>
+          )}
+
+          {activeSection === 'establishment' && showEstablishmentNav && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              {isGerant && isTauriRuntime() && (
+                <ProfilCollapsibleCard
+                  title="Mise à jour du système"
+                  icon={<span className="material-symbols-outlined text-[18px] text-[var(--accent)]">system_update</span>}
+                  open={profilCardOpen.estUpdater}
+                  onToggle={() => toggleProfilCard('estUpdater')}
+                >
                   <div className="p-6">
                     <YoboUpdater />
                   </div>
-                </section>
+                </ProfilCollapsibleCard>
               )}
 
-              {/* PRINTER SETTINGS (Gerant Only in layout but logic handled) */}
               {isGerant && isTauriRuntime() && (
-                <section className="overflow-hidden rounded-2xl bg-[var(--card)] shadow-[0_16px_48px_-24px_rgba(0,0,0,0.5)] ring-1 ring-[var(--border)]">
-                  <div className="border-b border-[var(--border)] px-6 py-4">
-                    <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-wider text-[var(--text-h)]">
-                      <span className="material-symbols-outlined text-[18px] text-[var(--accent)]">print</span>
-                      Configuration Imprimantes
-                    </h3>
-                  </div>
+                <ProfilCollapsibleCard
+                  title="Tickets & imprimantes"
+                  icon={<span className="material-symbols-outlined text-[18px] text-[var(--accent)]">print</span>}
+                  open={profilCardOpen.estTickets}
+                  onToggle={() => toggleProfilCard('estTickets')}
+                >
                   <div className="p-6 space-y-6">
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
@@ -489,18 +795,16 @@ export function ProfilPage() {
                       </button>
                     </div>
                   </div>
-                </section>
+                </ProfilCollapsibleCard>
               )}
 
-              {/* DATA & BACKUP (Gerant Only) */}
               {isGerant && isTauriRuntime() && userId !== null && (
-                <section className="overflow-hidden rounded-2xl bg-[var(--card)] shadow-[0_16px_48px_-24px_rgba(0,0,0,0.5)] ring-1 ring-[var(--border)]">
-                  <div className="border-b border-[var(--border)] px-6 py-4">
-                    <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-wider text-[var(--text-h)]">
-                      <span className="material-symbols-outlined text-[18px] text-[var(--accent)]">database</span>
-                      Données & Maintenance
-                    </h3>
-                  </div>
+                <ProfilCollapsibleCard
+                  title="Données & Maintenance"
+                  icon={<span className="material-symbols-outlined text-[18px] text-[var(--accent)]">database</span>}
+                  open={profilCardOpen.estData}
+                  onToggle={() => toggleProfilCard('estData')}
+                >
                   <div className="p-6 space-y-6">
                     {/* Backup Buttons */}
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -568,8 +872,8 @@ export function ProfilPage() {
                     </div>
 
                     {/* Purge Section (Alert Style) */}
-                    <div className="rounded-2xl bg-red-500/5 p-5 ring-1 ring-red-500/20">
-                      <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-red-500">
+                    <div className="rounded-2xl bg-[color-mix(in_oklab,var(--danger)_5%,transparent)] p-5 ring-1 ring-[color-mix(in_oklab,var(--danger)_20%,transparent)]">
+                      <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--danger)]">
                         <span className="material-symbols-outlined text-[18px]">warning</span>
                         Zone de Danger
                       </div>
@@ -587,7 +891,7 @@ export function ProfilPage() {
                             />
                           </div>
                           <button
-                            className="h-11 rounded-xl bg-red-500 px-6 text-xs font-black text-white hover:brightness-110 transition-all flex items-center justify-center gap-2"
+                            className="h-11 rounded-xl bg-[var(--danger)] px-6 text-xs font-black text-white hover:brightness-110 transition-all flex items-center justify-center gap-2 shadow-lg shadow-[var(--danger)]/20"
                             onClick={() => {
                               const pin = dbPurgePin.trim().replace(/\D/g, '')
                               if (pin.length < 4 || pin.length > 6) { pushToast('error', client.val.pinLength); return; }
@@ -621,7 +925,7 @@ export function ProfilPage() {
                               <label key={opt.key} className="flex items-center gap-3 p-3 rounded-xl border border-red-500/10 bg-white/5 cursor-pointer hover:bg-red-500/10 transition-colors">
                                 <input
                                   type="checkbox"
-                                  className="accent-red-500 rounded"
+                                  className="accent-[var(--danger)] rounded"
                                   checked={dbPurgeSelection[opt.key]}
                                   onChange={e => setDbPurgeSelection(s => ({ ...s, [opt.key]: e.target.checked }))}
                                 />
@@ -630,9 +934,9 @@ export function ProfilPage() {
                             ))}
                           </div>
                           <div className="space-y-2">
-                            <label className="text-[10px] font-bold text-red-500">Tapez "supprimer" pour valider l'effacement définitif</label>
+                            <label className="text-[10px] font-bold text-[var(--danger)]">Tapez &quot;supprimer&quot; pour valider l&apos;effacement définitif</label>
                             <YoboAlphaInput
-                              className="yobo-input w-full border-red-500/30 text-center font-black"
+                              className="yobo-input w-full border-[color-mix(in_oklab,var(--danger)_30%,transparent)] text-center font-black"
                               value={dbPurgeWord}
                               onValueChange={setDbPurgeWord}
                               placeholder="supprimer"
@@ -641,7 +945,7 @@ export function ProfilPage() {
                           <div className="flex gap-2">
                             <button onClick={() => setDbPurgePinVerified(false)} className="flex-1 py-3 text-[10px] font-black uppercase text-[var(--muted)]">Annuler</button>
                             <button
-                              className="flex-[2] py-3 rounded-xl bg-red-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-600/20"
+                              className="flex-[2] py-3 rounded-xl bg-[var(--danger)] text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[var(--danger)]/20"
                               onClick={() => {
                                 const noneSelected = !dbPurgeSelection.orders && !dbPurgeSelection.logs && !dbPurgeSelection.cashSessions && !dbPurgeSelection.caissiers && !dbPurgeSelection.catalogDelete
                                 if (noneSelected) { pushToast('error', 'Sélectionnez au moins un élément.'); return; }
@@ -665,7 +969,7 @@ export function ProfilPage() {
                       )}
                     </div>
                   </div>
-                </section>
+                </ProfilCollapsibleCard>
               )}
 
             </div>

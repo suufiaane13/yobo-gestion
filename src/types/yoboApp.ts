@@ -20,6 +20,7 @@ export type {
   CashSessionClosedRow,
   CashSessionDto,
   CashSessionOpenHistoriqueRow,
+  CashSessionOpenTotalsDto,
 } from './cash'
 export type { CaissierDto, UserProfileDto } from './users'
 export { caissierFromApiRow } from './users'

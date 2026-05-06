@@ -54,6 +54,17 @@ pub struct CashSessionOpenHistoriqueRow {
   pub sales_total: f64,
 }
 
+/// Totaux session ouverte (SQL) — carte caisse : aligné sur la fermeture, pas sur `orders` du store (pagination gérant).
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CashSessionOpenTotalsDto {
+  pub session_id: i64,
+  pub opening_amount: f64,
+  pub sales_total: f64,
+  pub theoretical: f64,
+  pub orders_count: i64,
+}
+
 fn ensure_db(conn: &rusqlite::Connection) -> Result<(), String> {
   db::ensure_schema(conn)?;
   db::ensure_default_gerant(conn)?;
@@ -275,10 +286,13 @@ pub fn cash_sessions_list_closed(user_id: i64) -> Result<Vec<CashSessionClosedRo
     return Err("Rôle invalide.".to_string());
   }
 
+  // Ventes session : SUM live des commandes validées (aligné sur la liste historique).
+  // Ne pas utiliser (theoretical - opening) : c’était figé à la clôture ; annulations / changements ensuite décaleraient l’affichage par rapport aux lignes commandes.
   let sql = if role_norm == "gerant" {
     r#"
     SELECT s.id, s.opened_at, s.closed_at, s.opening_amount,
-           (COALESCE(s.theoretical, 0) - s.opening_amount), u.name,
+           (SELECT COALESCE(SUM(o.total), 0) FROM orders o WHERE o.cash_session_id = s.id AND o.status = 'validated'),
+           u.name,
            COALESCE(s.closing_amount, 0), COALESCE(s.theoretical, 0), COALESCE(s.gap, 0),
            s.comment,
            (SELECT COUNT(*) FROM orders o WHERE o.cash_session_id = s.id AND o.status = 'validated')
@@ -291,7 +305,8 @@ pub fn cash_sessions_list_closed(user_id: i64) -> Result<Vec<CashSessionClosedRo
   } else {
     r#"
     SELECT s.id, s.opened_at, s.closed_at, s.opening_amount,
-           (COALESCE(s.theoretical, 0) - s.opening_amount), u.name,
+           (SELECT COALESCE(SUM(o.total), 0) FROM orders o WHERE o.cash_session_id = s.id AND o.status = 'validated'),
+           u.name,
            COALESCE(s.closing_amount, 0), COALESCE(s.theoretical, 0), COALESCE(s.gap, 0),
            s.comment,
            (SELECT COUNT(*) FROM orders o WHERE o.cash_session_id = s.id AND o.status = 'validated')
@@ -377,4 +392,46 @@ pub fn cash_session_open_for_historique(user_id: i64) -> Result<Option<CashSessi
       sales_total,
     },
   ))
+}
+
+#[tauri::command]
+pub fn cash_session_live_totals(user_id: i64) -> Result<Option<CashSessionOpenTotalsDto>, String> {
+  let conn = db::open_db_file()?;
+  ensure_db(&conn)?;
+
+  let role_norm = crate::authz::active_user_role(&conn, user_id)?;
+  if role_norm != "gerant" && role_norm != "caissier" {
+    return Err("Rôle invalide.".to_string());
+  }
+
+  let row: Option<(i64, f64, f64, i64)> = conn
+    .query_row(
+      r#"
+      SELECT s.id, s.opening_amount,
+        (SELECT COALESCE(SUM(o.total), 0) FROM orders o WHERE o.cash_session_id = s.id AND o.status = 'validated'),
+        (SELECT COUNT(*) FROM orders o WHERE o.cash_session_id = s.id AND o.status = 'validated')
+      FROM cash_sessions s
+      WHERE s.closed_at IS NULL
+      ORDER BY s.id DESC
+      LIMIT 1
+      "#,
+      [],
+      |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+    )
+    .optional()
+    .map_err(|e| e.to_string())?;
+
+  let Some((session_id, opening_amount, sales_total, orders_count)) = row else {
+    return Ok(None);
+  };
+
+  let theoretical = opening_amount + sales_total;
+
+  Ok(Some(CashSessionOpenTotalsDto {
+    session_id,
+    opening_amount,
+    sales_total,
+    theoretical,
+    orders_count,
+  }))
 }
